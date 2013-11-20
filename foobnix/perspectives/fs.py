@@ -5,7 +5,6 @@ __author__ = 'popsul'
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix import Savable, Loadable
-from foobnix.settings import SettingsContainer
 from foobnix.perspectives import BasePerspective
 from foobnix.gui import TabbedContainer
 
@@ -95,9 +94,13 @@ class FSTabbedWidget(TabbedContainer):
 
 
 class FSPerspective(BasePerspective, Savable, Loadable):
-    def __init__(self):
-        super(FSPerspective, self).__init__()
-        self.settings = SettingsContainer().getContainer("fsperspective")
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
+        super().__init__()
+        self.context = context
+        self.settings = context.getSettings("fsperspective")
         self.widget = FSTabbedWidget()
         self.widget.addTab()
 

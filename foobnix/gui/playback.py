@@ -8,10 +8,13 @@ from foobnix.controls import PlaybackControl
 
 class VolumeController(QSlider):
 
-    def __init__(self):
-        super(VolumeController, self).__init__(QtCore.Qt.Horizontal)
-        from foobnix.core import Core
-        self.controls = Core().getControls()
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
+        super().__init__(QtCore.Qt.Horizontal)
+        self.context = context
+        self.controls = context.getControls()
 
         self.setMinimumWidth(130)
         self.setRange(0, 100)
@@ -28,10 +31,13 @@ class VolumeController(QSlider):
 
 class SeekableProgressbar(QProgressBar):
 
-    def __init__(self):
-        super(SeekableProgressbar, self).__init__()
-        from foobnix.core import Core
-        self.controls = Core().getControls()
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
+        super().__init__()
+        self.context = context
+        self.controls = context.getControls()
 
         self.setTextVisible(True)
         self.valueChanged.connect(self._valueChanged)
@@ -52,10 +58,13 @@ class PlaybackControls(QHBoxLayout):
 
     #__metaclass__ = Singleton
 
-    def __init__(self, parent=None):
-        super(PlaybackControls, self).__init__(parent)
-        from foobnix.core import Core
-        self.controls = Core().getControls()
+    def __init__(self, context, parent=None):
+        """
+        @type context: GUIContext
+        """
+        super().__init__(parent)
+        self.context = context
+        self.controls = context.getControls()
 
         ## buttons
         self.stopButton = QPushButton(QIcon.fromTheme("media-playback-stop"), "")
@@ -70,10 +79,10 @@ class PlaybackControls(QHBoxLayout):
         buttonsWrapper.setContentsMargins(0, 0, 0, 0)
 
         ## volume controller
-        self.volumeSeeker = VolumeController()
+        self.volumeSeeker = VolumeController(self.context)
 
         ## progress seekbar
-        self.seekBar = SeekableProgressbar()
+        self.seekBar = SeekableProgressbar(self.context)
         self.seekBar.setMinimum(0)
         self.seekBar.setMaximum(100)
         self.seekBar.setValue(50)

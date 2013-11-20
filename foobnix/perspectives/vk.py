@@ -68,16 +68,19 @@ class VKPerspective(BasePerspective):
 
     profilesLoaded = QtCore.pyqtSignal(list, name="profilesLoaded")
 
-    def __init__(self):
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
         super(VKPerspective, self).__init__()
+        self.context = context
         self.widget = VKTreeWidget()
         self.activated.connect(self._activated)
         self.deactivated.connect(self._deactivated)
-        self.service = VKService()
+        self.service = VKService(context)
         self.service.activated.emit()
         self.loaded = False
         self.cache = []
-        #self.profilesLoaded.connect(self.populateTree)
         self.widget.expanded.connect(self.expanded)
 
     def getName(self):

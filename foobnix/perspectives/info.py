@@ -8,10 +8,6 @@ from foobnix.perspectives import BasePerspective
 from foobnix.gui import InteractiveLabel
 
 
-#QTrue = QtCore.QVariant(True)
-#QFalse = QtCore.QVariant(False)
-
-
 class BaseInfoSection(QtCore.QObject):
 
     activated = QtCore.pyqtSignal(name="activated")
@@ -129,9 +125,13 @@ QLabel[active="true"] {
 
 class InfoPerspective(BasePerspective):
 
-    def __init__(self):
-        super(InfoPerspective, self).__init__()
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
+        super().__init__()
 
+        self.context = context
         self.attachedSections = []
         self.labels = []
 

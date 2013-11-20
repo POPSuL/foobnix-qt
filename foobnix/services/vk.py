@@ -10,7 +10,6 @@ from PyQt4.QtCore import QUrl, pyqtSlot
 from PyQt4.QtGui import *
 from PyQt4.QtWebKit import *
 from PyQt4.QtNetwork import *
-from html.parser import HTMLParser
 from foobnix.services import BaseService
 
 scope = ["audio", "friends", "wall"]
@@ -107,8 +106,12 @@ class VKAuthDialog(QDialog):
 
 class VKService(BaseService):
 
-    def __init__(self):
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
         super(VKService, self).__init__()
+        self.context = context
         self.connected = False
         self.authData = None
         self.nmanager = QNetworkAccessManager()

@@ -3,7 +3,6 @@
 __author__ = 'popsul'
 
 from PyQt4.QtCore import QObject, pyqtSignal
-from PyQt4.QtGui import *
 
 
 class BasePerspective(QObject):
@@ -23,4 +22,3 @@ class BasePerspective(QObject):
 
     def getWidget(self):
         pass
-

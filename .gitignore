@@ -3,6 +3,10 @@
 # C extensions
 *.so
 
+# Binary builds
+*.exe
+*.dll
+
 # Packages
 *.egg
 *.egg-info

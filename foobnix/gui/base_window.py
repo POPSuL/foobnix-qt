@@ -5,7 +5,6 @@ __author__ = 'popsul'
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix import Loadable, Savable
-from foobnix.settings import SettingsContainer
 from foobnix.gui.perspectives import PerspectivesController
 from foobnix.gui.search import SearchBar
 from foobnix.gui.playback import PlaybackControls
@@ -14,9 +13,13 @@ from foobnix.gui.playlist import PlaylistsContainer
 
 class BaseWindow(QMainWindow, Loadable, Savable):
 
-    def __init__(self):
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
         super(BaseWindow, self).__init__()
-        self.guiSettings = SettingsContainer().getContainer("gui")
+        self.context = context
+        self.guiSettings = context.getSettings("gui")
 
         self.setWindowTitle("Foobnix")
 
@@ -50,7 +53,7 @@ class BaseWindow(QMainWindow, Loadable, Savable):
 
         ## base container
         self.vbox = QVBoxLayout()
-        self.vbox.addLayout(PlaybackControls())
+        self.vbox.addLayout(PlaybackControls(self.context))
         self.vbox.addWidget(self.splitter, 1)
 
         #self.setLayout(self.vbox)

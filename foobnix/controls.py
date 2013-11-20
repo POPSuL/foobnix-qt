@@ -3,8 +3,6 @@ __author__ = 'popsul'
 from PyQt4 import QtCore
 from PyQt4.QtCore import pyqtSignal
 from . import Loadable, Savable
-from .util import Singleton
-from .settings import SettingsContainer
 
 
 class Control(QtCore.QObject, Loadable, Savable):
@@ -26,20 +24,21 @@ class PlaybackControl(Control):
     StatePause = 1
     StatePlay = 2
 
-    _repeatMode = NoRepat
-    _shuffleMode = ShuffleOff
-    _volume = 50.
-    settings = SettingsContainer().getContainer("controls")
-
     stateChanged = pyqtSignal(int, name="stateChanged")
     volumeChaged = pyqtSignal(float, name="volumeChanged")
     repeatModeChanged = pyqtSignal(int, name="repeatModeChanged")
     shuffleModeChanged = pyqtSignal(int, name="shuffleModeChanged")
 
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(PlaybackControl, cls).__new__(cls)
-        return cls.instance
+    def __init__(self, context):
+        """
+        @type context: CoreContext
+        """
+        super().__init__()
+        self.context = context
+        self.settings = context.getSettings("controls")
+        self._repeatMode = self.NoRepat
+        self._shuffleMode = self.ShuffleOff
+        self._volume = 50.
 
     def load(self):
         self.setShuffleMode(int(self.settings.value("playback/shuffle", self.ShuffleOff)))

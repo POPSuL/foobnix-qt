@@ -1,7 +1,7 @@
 __author__ = 'popsul'
 
 from PyQt4 import QtCore
-from . import Loadable, Savable
+from . import Loadable, Savable, Context
 from .gui.base_window import BaseWindow
 from .gui.perspectives import PerspectivesController
 from .perspectives.fs import FSPerspective
@@ -15,13 +15,19 @@ class Interface(QtCore.QObject, Loadable, Savable):
 
 class GUIInterface(Interface):
 
-    def __init__(self):
+    def __init__(self, context):
+        """
+        @type context foobnix.core.CoreContext
+        """
         super().__init__()
-        self.window = BaseWindow()
-        self.perspectives = PerspectivesController()
-        self.perspectives.attachPerspective(FSPerspective())
-        self.perspectives.attachPerspective(VKPerspective())
-        self.perspectives.attachPerspective(InfoPerspective())
+        self.context = context
+
+        self.window = BaseWindow(self.createContext())
+
+        self.perspectives = PerspectivesController(self.createContext())
+        self.perspectives.attachPerspective(FSPerspective(self.createContext()))
+        self.perspectives.attachPerspective(VKPerspective(self.createContext()))
+        self.perspectives.attachPerspective(InfoPerspective(self.createContext()))
         self.window.setPerspectiveController(self.perspectives)
 
     def load(self):
@@ -33,10 +39,55 @@ class GUIInterface(Interface):
         self.window.save()
         self.perspectives.save()
 
+    def createContext(self):
+        """
+        @rtype GUIContext
+        """
+        return GUIContext(self)
+
+    def getContext(self):
+        """
+        @rtype CoreContext
+        """
+        return self.context
+
+
+class GUIContext(Context):
+
+    def __init__(self, interface):
+        """
+        @type interface: GUIInterface
+        """
+        super().__init__()
+        self.__interface = interface
+        self.__coreContext = interface.getContext()
+
+    def getBaseWindow(self):
+        """
+        @rtype PyQt4.QtGui.QMainWindow
+        """
+        return self.__interface.window
+
+    def getSettings(self, container):
+        """
+        @type container: str
+        @rtype Settings
+        """
+        return self.__coreContext.getSettings(container)
+
+    def getControls(self):
+        """
+        @rtype PlaybackControl
+        """
+        return self.__coreContext.getControls()
+
 
 class DBusInterface(Interface):
 
-    def __init__(self):
+    def __init__(self, context):
+        """
+        @type context: foobnix.core.CoreContext
+        """
         super().__init__()
 
     def load(self):

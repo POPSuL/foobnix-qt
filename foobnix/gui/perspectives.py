@@ -5,12 +5,14 @@ __author__ = 'popsul'
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix import Loadable, Savable
-from foobnix.perspectives import BasePerspective
 
 
 class PerspectivesController(QVBoxLayout, Loadable, Savable):
 
-    def __init__(self):
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
         super(PerspectivesController, self).__init__()
 
         self.attachedPerspectives = []
