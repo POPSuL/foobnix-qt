@@ -1,0 +1,26 @@
+# -*- coding: utf-8 -*-
+
+__author__ = 'popsul'
+
+from PyQt4.QtCore import QObject, pyqtSignal
+from PyQt4.QtGui import *
+
+
+class BasePerspective(QObject):
+
+    deactivated = pyqtSignal(name="deactivated")
+
+    activated = pyqtSignal(name="activated")
+
+    def __init__(self):
+        super(BasePerspective, self).__init__()
+
+    def getName(self):
+        pass
+
+    def getIcon(self):
+        pass
+
+    def getWidget(self):
+        pass
+
