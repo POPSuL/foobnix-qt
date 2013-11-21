@@ -34,7 +34,7 @@ class BaseWindow(QMainWindow, Loadable, Savable):
 
         ## searchbar + playlist contaner
         self.searchBar = SearchBar()
-        self.playlistsContainer = PlaylistsContainer()
+        self.playlistsContainer = PlaylistsContainer(self.context)
         rightHBox = QVBoxLayout()
         rightHBox.addLayout(self.searchBar)
         rightHBox.addWidget(self.playlistsContainer, 1)

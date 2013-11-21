@@ -2,6 +2,10 @@
 
 __author__ = 'popsul'
 
+import os
+from pprint import PrettyPrinter as pp
+from foobnix.models import Media
+
 
 class Singleton(type):
 
@@ -13,3 +17,16 @@ class Singleton(type):
     def __init__(self, name, bases, dict):
         super(Singleton, self).__init__(name, bases, dict)
         self.instance = None
+
+
+def createMediasForPaths(paths):
+    if not isinstance(paths, list):
+        paths = [paths]
+    medias = []
+    for path in paths:
+        for (d, dirs, files) in os.walk(path):
+            medias.append(Media(d, isMeta=True))
+            for file in files:
+                medias.append(Media(os.path.join(d, file)))
+    pp(indent=4).pprint(medias)
+    return medias

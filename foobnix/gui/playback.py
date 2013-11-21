@@ -38,20 +38,34 @@ class SeekableProgressbar(QProgressBar):
         super().__init__()
         self.context = context
         self.controls = context.getControls()
+        self.controls.positionChanged.connect(self.onPositionChanged)
 
         self.setTextVisible(True)
         self.valueChanged.connect(self._valueChanged)
+        self.controls.seekableChanged.connect(self.seekableChanged)
+
+        self.isSeekable = True
 
     def mousePressEvent(self, ev):
-        if ev.button() == QtCore.Qt.LeftButton:
+        if ev.button() == QtCore.Qt.LeftButton and self.isSeekable:
             self.setValue(self.minimum() + ((self.maximum() - self.minimum()) * ev.x()) / (self.width() - 8))
+            self.controls.seek(self.value())
             ev.accept()
         super(QProgressBar, self).mousePressEvent(ev)
 
+    def onPositionChanged(self, current, total):
+        self.setMaximum(total)
+        self.setValue(current)
+
     def _valueChanged(self, newValue):
-        minutes = newValue / 60
-        seconds = newValue % 60
+        nv = newValue / 1000
+        minutes = nv / 60
+        seconds = nv % 60
         self.setFormat("%02d:%02d" % (minutes or 0, seconds or 0))
+
+    def seekableChanged(self, seekable):
+        self.isSeekable = seekable
+        self.onPositionChanged(1, 1)
 
 
 class PlaybackControls(QHBoxLayout):
@@ -100,6 +114,10 @@ class PlaybackControls(QHBoxLayout):
         self.addWidget(self.volumeSeeker)
         self.addWidget(Separator())
         self.addWidget(self.seekBar, 1)
+
+        self.playButton.clicked.connect(lambda *x: self.controls.play(None))
+        self.pauseButton.clicked.connect(self.controls.pause)
+        self.stopButton.clicked.connect(self.controls.stop)
 
         self.queueModeButton.setCheckable(True)
         self.queueModeButton.setChecked(self.controls.shuffleMode() == PlaybackControl.ShuffleOn)

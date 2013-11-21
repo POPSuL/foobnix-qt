@@ -2,28 +2,53 @@
 
 __author__ = 'popsul'
 
+import os
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix import Savable, Loadable
-from foobnix.perspectives import BasePerspective
 from foobnix.gui import TabbedContainer
+from foobnix.util import createMediasForPaths
+from foobnix.perspectives import BasePerspective
 
 
 supportedFiles = ["*.mp3", "*.m3u", "*.wav", "*.flac", "*.mp4", "*.aac", "*.m4a", "*.cue"]
 
 
+class FSTreeView(QTreeView):
+
+    itemDoubleClicked = QtCore.pyqtSignal(str, name="itemDoubleClicked")
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.treeModel = QFileSystemModel()
+        self.setModel(self.treeModel)
+
+    def mouseDoubleClickEvent(self, ev):
+        """
+        @type ev: QMouseEvent
+        """
+        index = self.indexAt(ev.pos())
+        self.itemDoubleClicked.emit(self.treeModel.filePath(index))
+        ev.accept()
+
+
 class FSTabPage(QWidget):
     tabRenameRequested = QtCore.pyqtSignal(str, name="tabRenameRequested")
 
-    def __init__(self, path=None):
-        super(FSTabPage, self).__init__()
+    def __init__(self, context, path=None):
+        """
+        @type context: GUIContext
+        @type path: str
+        """
+        super().__init__()
 
+        self.context = context
         self.rootPath = None
 
         ## build gui
         self.layout = QStackedLayout()
-        self.tree = QTreeView()
-        self.treeModel = QFileSystemModel()
+        self.tree = FSTreeView()
+        self.treeModel = self.tree.treeModel
         self.tree.setModel(self.treeModel)
         # hide additional columns
         [self.tree.hideColumn(i) for i in range(1, self.treeModel.columnCount())]
@@ -48,6 +73,18 @@ class FSTabPage(QWidget):
         else:
             self.layout.setCurrentIndex(0)
 
+        self.tree.itemDoubleClicked.connect(self.playPath)
+
+    def playPath(self, path):
+        if os.path.isdir(path):
+            title = os.path.basename(path)
+        else:
+            title = os.path.basename(os.path.dirname(path))
+
+        medias = createMediasForPaths([path])
+        playlist = self.context.getPlaylistManager().createPlaylist(title, medias)
+        playlist.playFirst()
+
     def selectPath(self):
         path = QFileDialog.getExistingDirectory(self, "Select a directory")
         if path:
@@ -65,8 +102,12 @@ class FSTabPage(QWidget):
 
 
 class FSTabbedWidget(TabbedContainer):
-    def __init__(self):
-        super(FSTabbedWidget, self).__init__()
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
+        super().__init__()
+        self.context = context
         self.setTabPosition(QTabWidget.West)
 
         self.menu = QMenu()
@@ -78,7 +119,7 @@ class FSTabbedWidget(TabbedContainer):
         self.selectOtherDirAction.triggered.connect(lambda *a: self.currentWidget().selectPath())
 
     def addTab(self, label="Empty", path=None):
-        page = FSTabPage(path)
+        page = FSTabPage(self.context, path)
 
         def renameTabPage(name):
             index = self.indexOf(page)
@@ -101,7 +142,7 @@ class FSPerspective(BasePerspective, Savable, Loadable):
         super().__init__()
         self.context = context
         self.settings = context.getSettings("fsperspective")
-        self.widget = FSTabbedWidget()
+        self.widget = FSTabbedWidget(context)
         self.widget.addTab()
 
         self.activated.connect(self._activated)

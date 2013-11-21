@@ -81,6 +81,12 @@ class GUIContext(Context):
         """
         return self.__coreContext.getControls()
 
+    def getPlaylistManager(self):
+        """
+        @rtype PlaylistContainer
+        """
+        return self.__interface.window.playlistsContainer
+
 
 class DBusInterface(Interface):
 
