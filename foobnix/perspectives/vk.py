@@ -2,20 +2,28 @@
 
 __author__ = 'popsul'
 
+import logging
 import threading
 
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
+from foobnix.models import Media
 from foobnix.perspectives import BasePerspective
 from foobnix.services.vk import VKService
 
 
 class VKTreeItem(QStandardItem):
 
-    def __init__(self, title, parent=None, service=False):
+    def __init__(self, title, parent=None, service=False, trackEntry=False, userEntry=False):
         super(VKTreeItem, self).__init__(title)
 
+        self.userEntry = userEntry
+        self.trackEntry = trackEntry
+        self.serviceEntry = service
         self.userId = None
+        self.url = None
+        self.title = None
+        self.artist = None
 
         if service:
             self.setItalic()
@@ -34,6 +42,20 @@ class VKTreeItem(QStandardItem):
 
     def removeChildren(self):
         self.removeRows(0, self.rowCount())
+
+    def toMedia(self):
+        if self.serviceEntry:
+            return []
+        if self.trackEntry:
+            return [Media(path=self.url, artist=self.artist, title=self.title)]
+        if self.userEntry:
+            medias = []
+            for i in range(0, self.rowCount()):
+                item = self.child(i)
+                if item:
+                    medias.extend(item.toMedia())
+            return medias
+        raise Exception("Illegal item type")
 
 
 class VKTreeLoadingItem(VKTreeItem):
@@ -56,12 +78,22 @@ class VKTreeModel(QStandardItemModel):
 
 class VKTreeWidget(QTreeView):
 
+    itemDoubleClicked = QtCore.pyqtSignal(QtCore.QModelIndex, name="itemDoubleClicked")
+
     def __init__(self):
         super(VKTreeWidget, self).__init__()
         self.model = VKTreeModel()
         self.setModel(self.model)
         self.setDragEnabled(True)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+    def mouseDoubleClickEvent(self, ev):
+        """
+        @type ev: QMouseEvent
+        """
+        index = self.indexAt(ev.pos())
+        self.itemDoubleClicked.emit(index)
+        ev.accept()
 
 
 class VKPerspective(BasePerspective):
@@ -82,6 +114,7 @@ class VKPerspective(BasePerspective):
         self.loaded = False
         self.cache = []
         self.widget.expanded.connect(self.expanded)
+        self.widget.itemDoubleClicked.connect(self.doubleClicked)
 
     def getName(self):
         return "VK"
@@ -100,9 +133,27 @@ class VKPerspective(BasePerspective):
             item.removeChildren()
             if tracks:
                 for track in tracks:
-                    row = VKTreeItem("%s - %s" % (track["artist"], track["title"]), parent=item)
+                    row = VKTreeItem("%s - %s" % (track["artist"], track["title"]), parent=item, trackEntry=True)
+                    row.url = track['url']
+                    row.artist = track['artist']
+                    row.title = track['title']
+                    row.aid = track['id']
+                    row.owner = track['owner_id']
+                    row.duration = track['duration']
             else:
                 row = VKTreeItem("Nothing found", parent=item, service=True)
+
+    def doubleClicked(self, index):
+        logging.debug("doubleClicked")
+        item = self.widget.model.itemFromIndex(index)
+        if item:
+            medias = item.toMedia()
+            if medias:
+                self.context.getPlaylistManager().createPlaylist("VK", medias)
+            else:
+                logging.warning("No medias found")
+        else:
+            logging.warning("item doesn't exists")
 
     def clear(self):
         self.widget.model.clear()
@@ -112,9 +163,10 @@ class VKPerspective(BasePerspective):
             return
         if isinstance(data, dict):
             data = [data]
+        print(data)
         for profile in data:
-            row = VKTreeItem("%s %s" % (profile["first_name"], profile["last_name"]))
-            row.userId = profile["uid"]
+            row = VKTreeItem("%s %s" % (profile["first_name"], profile["last_name"]), userEntry=True)
+            row.userId = profile["id"]
             row.appendRow(VKTreeLoadingItem())
             row.setBold()
             self.widget.model.appendRow(row)

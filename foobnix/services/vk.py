@@ -4,6 +4,7 @@ __author__ = 'popsul'
 
 import os
 import json
+import logging
 
 from PyQt4 import QtCore
 from PyQt4.QtCore import QUrl, pyqtSlot
@@ -137,7 +138,7 @@ class VKService(BaseService):
     def apiRequest(self, method, data):
         if not self.isConnected():
             return None
-        url = "https://api.vk.com/method/%(METHOD_NAME)s?%(PARAMETERS)s&access_token=%(ACCESS_TOKEN)s" % {
+        url = "https://api.vk.com/method/%(METHOD_NAME)s?%(PARAMETERS)s&access_token=%(ACCESS_TOKEN)s&v=5.4" % {
             'METHOD_NAME': method,
             'PARAMETERS': data,
             'ACCESS_TOKEN': self.getUserToken()}
@@ -151,6 +152,7 @@ class VKService(BaseService):
         if reply.error() == QNetworkReply.NoError:
             answer = reply.readAll().data().decode('utf-8')
             data = self.jsonToDict(answer)
+            logging.debug(data)
             if "error" in data:
                 print("error found")
             else:
@@ -166,23 +168,23 @@ class VKService(BaseService):
             return None
         if not userId:
             userId = self.authData["user_id"]
-        return self.apiRequest("getProfiles", "uid=" + str(userId))
+        return self.apiRequest("getProfiles", "user_id=" + str(userId))
 
     def getProfiles(self, uids):
         if not self.isConnected():
             return None
-        return self.apiRequest("getProfiles", "uids=" + str(uids))
+        return self.apiRequest("getProfiles", "user_ids=" + str(uids))
 
     def getFriends(self, userId=None):
         if not self.isConnected():
             return None
         if not userId:
             userId = self.authData["user_id"]
-        return self.apiRequest("friends.get", "uid=" + str(userId))
+        return self.apiRequest("friends.get", "user_id=" + str(userId))["items"]
 
     def getUserTracks(self, userId=None):
         if not self.isConnected():
             return None
         if not userId:
             userId = self.authData["user_id"]
-        return self.apiRequest("audio.get", "uid=" + str(userId))
+        return self.apiRequest("audio.get", "user_id=" + str(userId))["items"]
