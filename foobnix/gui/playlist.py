@@ -2,12 +2,11 @@
 
 __author__ = 'popsul'
 
-import glob
-import random
+import logging
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix.gui import TabbedContainer
-from foobnix.models import PlaylistModel, StandartPlaylistModel, Media, MediaItem
+from foobnix.models import StandartPlaylistModel, Media, MediaItem
 
 
 class RatingDelegate(QItemDelegate):
@@ -64,7 +63,7 @@ class DummyPlaylistItem(PlaylistItem):
         self.setText(0, str(count))
         for i in range(1, 5):
             self.setText(i, "Dummy %d" % count)
-        self.setData(5, 0, random.randint(0, 10))
+        self.setData(5, 0, 5)
 
     @staticmethod
     def getCount():
@@ -97,14 +96,15 @@ class Playlist(QTreeView):
         self.header().setResizeMode(0, QHeaderView.Fixed)
         self.header().setResizeMode(1, QHeaderView.Fixed)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.model.modelReset.connect(self.modelReset)
 
         if media:
             self.addMedias(media)
 
         self.doubleClicked.connect(self.dbclicked)
-        #self.setItemDelegateForColumn(5, RatingDelegate())
-        #for i in range(0, 1000):
-        #    self.addItem(DummyPlaylistItem())
+
+    def modelReset(self):
+        print("Model reseted")
 
     def addMedia(self, media):
         assert isinstance(media, Media), "unrecognized media type"
@@ -121,8 +121,7 @@ class Playlist(QTreeView):
         """
         if not index.isValid():
             return
-        cell = self.model.item(index.row())
-        self.context.getControls().play(cell.media)
+        self.playAt(index.row())
 
     def addItem(self, item):
         self.addTopLevelItem(item)
@@ -137,18 +136,72 @@ class Playlist(QTreeView):
         assert isinstance(item, QStandardItem), "unrecognized item type"
         assert isinstance(item.media, Media), "unrecognized media"
         self.context.getControls().play(item.media, True)
-        self.setPlayIcon(item.media)
 
     def setPlayIcon(self, media):
         assert isinstance(media, Media)
+        logging.debug("setPlayIcon(%s)" % media.path)
         setted = False
         for i in range(0, self.model.rowCount()):
             item = self.model.item(i)
-            if not setted and item and item == media:
+            if not setted and item and item.media == media:
                 item.setIcon(QIcon.fromTheme("go-next"))
                 setted = True
             else:
                 item.setIcon(QIcon())
+
+    def getPrevious(self, shuffle=False):
+        logging.debug("getPrevious called")
+        if self.model.rowCount() == 0:
+            logging.debug("model is empty")
+            return None
+        startFrom = self.getRowWithPlayIcon() - 1
+        if startFrom < 0:
+            startFrom = self.model.rowCount() - 1
+        logging.debug("starts from %d" % startFrom)
+        iteration = 0
+        while 1:
+            if iteration > 1:
+                return None
+            for i in range(startFrom, -1, -1):
+                logging.debug("check %d" % i)
+                item = self.model.item(i)
+                if item and not item.media.isMeta:
+                    return item.media
+
+            if startFrom != self.model.rowCount() - 1:
+                startFrom = self.model.rowCount() - 1
+                iteration += 1
+            else:
+                return None
+
+    def getNext(self, shuffle=False, repeatAll=False):
+        logging.debug("getNext called")
+        if self.model.rowCount() == 0:
+            return None
+        startFrom = self.getRowWithPlayIcon() + 1
+        if startFrom >= self.model.rowCount():
+            startFrom = 0
+        iteration = 0
+        while 1:
+            if iteration > 1:
+                return None
+            for i in range(startFrom, self.model.rowCount()):
+                item = self.model.item(i)
+                if item and not item.media.isMeta:
+                    return item.media
+
+            if repeatAll and startFrom != 0:
+                startFrom = 0
+                iteration += 1
+            else:
+                return None
+
+    def getRowWithPlayIcon(self):
+        for i in range(0, self.model.rowCount()):
+            item = self.model.item(i)
+            if item and not item.icon().isNull():
+                return i
+        return -1
 
     def playFirst(self):
         for i in range(0, self.model.rowCount()):
@@ -168,7 +221,11 @@ class PlaylistsContainer(TabbedContainer):
         """
         super().__init__()
         self.context = context
+        self.controls = self.context.getControls()
         self.createPlaylist()
+        self.controls.needNext.connect(self.playNext)
+        self.controls.needPrev.connect(self.playPrev)
+        self.controls.stateChanged.connect(self.stateChanged)
 
     def __createPlaylist(self, media):
         return Playlist(self.context, media=media)
@@ -188,3 +245,24 @@ class PlaylistsContainer(TabbedContainer):
         index = self.insertTab(0, playlist, title)
         self.setCurrentIndex(index)
         return playlist
+
+    def playNext(self, shuffle, repeatAll):
+        current = self.getCurrent()
+        assert isinstance(current, Playlist), "playlist not provided"
+        media = current.getNext(shuffle, repeatAll)
+        if media:
+            self.controls.play(media)
+
+    def playPrev(self, shuffle):
+        current = self.getCurrent()
+        assert isinstance(current, Playlist), "playlist not provided"
+        media = current.getPrevious(shuffle)
+        if media:
+            self.controls.play(media)
+
+    def stateChanged(self, state, media):
+        logging.debug("state changed: %s" % state)
+        if media and state == self.controls.StatePlay:
+            current = self.getCurrent()
+            if current:
+                current.setPlayIcon(media)

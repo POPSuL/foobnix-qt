@@ -60,7 +60,7 @@ class MediaItem(list):
 class StandartPlaylistModel(QtGui.QStandardItemModel):
 
     def __init__(self, *args):
-        super().__init__(0, 6)
+        super().__init__(0, 7)
         self.setHeaderData(0, QtCore.Qt.Horizontal, self.tr("*"))
         self.setHeaderData(1, QtCore.Qt.Horizontal, self.tr("#"))
         self.setHeaderData(2, QtCore.Qt.Horizontal, self.tr("Artist"))

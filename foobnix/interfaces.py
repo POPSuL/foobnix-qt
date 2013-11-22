@@ -87,6 +87,12 @@ class GUIContext(Context):
         """
         return self.__interface.window.playlistsContainer
 
+    def getEngine(self):
+        """
+        @rtype MediaEngine
+        """
+        return self.__coreContext.getEngine()
+
 
 class DBusInterface(Interface):
 

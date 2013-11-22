@@ -118,6 +118,8 @@ class PlaybackControls(QHBoxLayout):
         self.playButton.clicked.connect(lambda *x: self.controls.play(None))
         self.pauseButton.clicked.connect(self.controls.pause)
         self.stopButton.clicked.connect(self.controls.stop)
+        self.prevButton.clicked.connect(lambda *x: self.controls.playPrev())
+        self.nextButton.clicked.connect(lambda *x: self.controls.playNext())
 
         self.queueModeButton.setCheckable(True)
         self.queueModeButton.setChecked(self.controls.shuffleMode() == PlaybackControl.ShuffleOn)

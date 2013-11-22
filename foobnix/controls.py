@@ -1,5 +1,6 @@
 __author__ = 'popsul'
 
+import logging
 from PyQt4 import QtCore
 from PyQt4.QtCore import pyqtSignal
 from . import Loadable, Savable
@@ -24,12 +25,14 @@ class PlaybackControl(Control):
     StatePause = 1
     StatePlay = 2
 
-    stateChanged = pyqtSignal(int, name="stateChanged")
+    stateChanged = pyqtSignal(int, object, name="stateChanged")
     volumeChaged = pyqtSignal(float, name="volumeChanged")
     repeatModeChanged = pyqtSignal(int, name="repeatModeChanged")
     shuffleModeChanged = pyqtSignal(int, name="shuffleModeChanged")
     positionChanged = pyqtSignal(int, int, name="positionChanged")
     seekableChanged = pyqtSignal(bool, name="seekableChanged")
+    needNext = pyqtSignal(bool, bool, name="needNext")
+    needPrev = pyqtSignal(bool, name="needRandom")
 
     def __init__(self, context):
         """
@@ -42,8 +45,10 @@ class PlaybackControl(Control):
         self._repeatMode = self.NoRepat
         self._shuffleMode = self.ShuffleOff
         self._volume = 50.
+        self._lastPlayed = None
         self.engine.positionChanged.connect(self.positionChanged.emit)
         self.engine.seekableChanged.connect(self.seekableChanged.emit)
+        self.engine.finished.connect(self._finished)
 
     def load(self):
         self.setShuffleMode(int(self.settings.value("playback/shuffle", self.ShuffleOff)))
@@ -56,17 +61,19 @@ class PlaybackControl(Control):
         self.settings.setValue("playback/volume", self.volume())
 
     def play(self, media, force=False):
-        print("play", media.path)
+        logging.debug("play")
+        logging.debug(media.path)
+        self._lastPlayed = media
         self.engine.play(media, force=force)
-        self.stateChanged.emit(self.StatePlay)
+        self.stateChanged.emit(self.StatePlay, media)
 
     def pause(self):
         self.engine.pause()
-        self.stateChanged.emit(self.StatePause)
+        self.stateChanged.emit(self.StatePause, self._lastPlayed)
 
     def stop(self):
         self.engine.stop()
-        self.stateChanged.emit(self.StateStop)
+        self.stateChanged.emit(self.StateStop, self._lastPlayed)
 
     def setVolume(self, val):
         assert isinstance(val, float), "val must be float"
@@ -96,3 +103,24 @@ class PlaybackControl(Control):
 
     def shuffleMode(self):
         return self._shuffleMode
+
+    def lastPlayed(self):
+        return self._lastPlayed
+
+    def playNext(self):
+        logging.debug("playNext called")
+        if self._lastPlayed and self.repeatMode() == self.RepeatOne:
+            self.play(self._lastPlayed, True)
+        else:
+            self.needNext.emit(self.shuffleMode() == self.ShuffleOn, self.repeatMode() == self.RepeatAll)
+
+    def playPrev(self):
+        logging.debug("playPrev called")
+        if self._lastPlayed and self.repeatMode() == self.RepeatOne:
+            self.play(self._lastPlayed, True)
+        else:
+            self.needPrev.emit(self.shuffleMode() == self.ShuffleOn)
+
+    def _finished(self):
+        logging.debug("_finished signal received")
+        self.playNext()

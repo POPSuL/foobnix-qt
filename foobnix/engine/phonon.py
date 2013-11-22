@@ -1,7 +1,6 @@
 __author__ = 'popsul'
 
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+import logging
 from PyQt4.phonon import Phonon
 from . import MediaEngine
 
@@ -24,6 +23,7 @@ class PhononEngine(MediaEngine):
         self.metaInformationResolver.stateChanged.connect(self._metaStateChanged)
         self.mediaObject.currentSourceChanged.connect(self._currentSourceChanged)
         self.mediaObject.aboutToFinish.connect(self._aboutToFinish)
+        self.mediaObject.finished.connect(self.finished.emit)
         Phonon.createPath(self.mediaObject, self.audioOutput)
 
         self.prevMedia = None
@@ -32,7 +32,7 @@ class PhononEngine(MediaEngine):
         self.timeChanged.emit(t, self.mediaObject.totalTime())
 
     def _stateChanged(self, newState, oldState):
-        print("_stateChanged", newState, oldState)
+        logging.debug("_stateChanged(%d, %d)" % (newState, oldState))
         if newState == Phonon.StoppedState:
             self.stateChanged.emit(self.StoppedState)
         elif newState == Phonon.PausedState:
@@ -45,13 +45,13 @@ class PhononEngine(MediaEngine):
             self.stateChanged.emit(self.ErrorState)
 
     def _metaStateChanged(self, newState, oldState):
-        print("_metaStateChanged", newState, oldState)
+        logging.debug("_metaStateChanged(%d, %d)" % (newState, oldState))
 
     def _currentSourceChanged(self, source):
-        print("_currentSourceChanged", source)
+        pass
 
     def _aboutToFinish(self):
-        print("_aboutToFinish")
+        pass
 
     def play(self, media=None, force=False):
         """

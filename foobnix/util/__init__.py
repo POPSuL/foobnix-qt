@@ -3,7 +3,6 @@
 __author__ = 'popsul'
 
 import os
-from pprint import PrettyPrinter as pp
 from foobnix.models import Media
 
 
@@ -28,5 +27,4 @@ def createMediasForPaths(paths):
             medias.append(Media(d, isMeta=True))
             for file in files:
                 medias.append(Media(os.path.join(d, file)))
-    pp(indent=4).pprint(medias)
     return medias

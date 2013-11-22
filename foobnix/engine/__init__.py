@@ -14,6 +14,7 @@ class MediaEngine(QtCore.QObject):
     stateChanged = QtCore.pyqtSignal(int, name="stateChanged")
     positionChanged = QtCore.pyqtSignal(int, int, name="timeChanged")
     seekableChanged = QtCore.pyqtSignal(bool, name="seekableChanged")
+    finished = QtCore.pyqtSignal(name="finished")
 
     def __init__(self, context):
         """
