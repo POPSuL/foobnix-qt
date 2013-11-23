@@ -33,6 +33,7 @@ class PlaybackControl(Control):
     seekableChanged = pyqtSignal(bool, name="seekableChanged")
     needNext = pyqtSignal(bool, bool, name="needNext")
     needPrev = pyqtSignal(bool, name="needRandom")
+    needCurrent = pyqtSignal(name="needCurrent")
 
     def __init__(self, context):
         """
@@ -60,12 +61,23 @@ class PlaybackControl(Control):
         self.settings.setValue("playback/shuffle", self.shuffleMode())
         self.settings.setValue("playback/volume", self.volume())
 
-    def play(self, media, force=False):
+    def play(self, media=None, force=False):
         logging.debug("play")
-        logging.debug(media.path)
-        self._lastPlayed = media
-        self.engine.play(media, force=force)
-        self.stateChanged.emit(self.StatePlay, media)
+        if media:
+            logging.debug(media.path)
+        else:
+            logging.debug("Empty media")
+        if self.engine.isPaused():
+            self.engine.play()
+        elif not media and self.engine.isPlaying() and self._lastPlayed:
+            self.engine.play(self._lastPlayed, True)
+        elif not media:
+            self.needCurrent.emit()
+            return
+        else:
+            self._lastPlayed = media
+            self.engine.play(media, force=force)
+            self.stateChanged.emit(self.StatePlay, media)
 
     def pause(self):
         self.engine.pause()

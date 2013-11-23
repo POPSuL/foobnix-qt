@@ -196,12 +196,31 @@ class Playlist(QTreeView):
             else:
                 return None
 
+    def getCurrent(self):
+        row = self.getRowWithPlayIcon()
+        if row != -1:
+            item = self.model.item(row)
+            if item and not item.media.isMeta:
+                return item.media
+        rows = self.selectionModel().selectedRows()
+        for row in rows:
+            item = self.model.item(row.row())
+            if item and not item.media.isMeta:
+                return item.media
+        return self.getFirst()
+
     def getRowWithPlayIcon(self):
         for i in range(0, self.model.rowCount()):
             item = self.model.item(i)
             if item and not item.icon().isNull():
                 return i
         return -1
+
+    def getFirst(self):
+        for i in range(0, self.model.rowCount()):
+            item = self.model.item(i)
+            if item and not item.media.isMeta:
+                return item.media
 
     def playFirst(self):
         for i in range(0, self.model.rowCount()):
@@ -225,6 +244,7 @@ class PlaylistsContainer(TabbedContainer):
         self.createPlaylist()
         self.controls.needNext.connect(self.playNext)
         self.controls.needPrev.connect(self.playPrev)
+        self.controls.needCurrent.connect(self.playCurrent)
         self.controls.stateChanged.connect(self.stateChanged)
 
     def __createPlaylist(self, media):
@@ -257,6 +277,13 @@ class PlaylistsContainer(TabbedContainer):
         current = self.getCurrent()
         assert isinstance(current, Playlist), "playlist not provided"
         media = current.getPrevious(shuffle)
+        if media:
+            self.controls.play(media)
+
+    def playCurrent(self):
+        current = self.getCurrent()
+        assert isinstance(current, Playlist), "playlist not provided"
+        media = current.getCurrent()
         if media:
             self.controls.play(media)
 

@@ -24,6 +24,7 @@ class VKTreeItem(QStandardItem):
         self.url = None
         self.title = None
         self.artist = None
+        self.duration = None
 
         if service:
             self.setItalic()
@@ -47,7 +48,9 @@ class VKTreeItem(QStandardItem):
         if self.serviceEntry:
             return []
         if self.trackEntry:
-            return [Media(path=self.url, artist=self.artist, title=self.title)]
+            media = Media(path=self.url, artist=self.artist, title=self.title)
+            media.duration = self.duration
+            return [media]
         if self.userEntry:
             medias = []
             for i in range(0, self.rowCount()):
@@ -125,7 +128,6 @@ class VKPerspective(BasePerspective):
     def expanded(self, index):
         item = self.widget.model.itemFromIndex(index)
         if item:
-            print("item expanded, user id is", item.userId, item)
             if item.userId in self.cache:
                 return
             tracks = self.service.getUserTracks(item.userId)
@@ -145,6 +147,7 @@ class VKPerspective(BasePerspective):
 
     def doubleClicked(self, index):
         logging.debug("doubleClicked")
+        self.expanded(index)
         item = self.widget.model.itemFromIndex(index)
         if item:
             medias = item.toMedia()
