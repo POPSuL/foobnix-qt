@@ -6,20 +6,19 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 
-class Media(QtCore.QObject):
+class Media():
 
     def __init__(self, path=None, artist=None, title=None, parent=None, isMeta=False):
-        super().__init__()
         self.path = path
         self.temporary = not path
         if path:
-            self.id = md5(self.path.encode("utf-8"))
+            self.id = md5(self.path.encode("utf-8")).hexdigest()
         else:
             self.id = None
         self.parent = parent
         self.number = None
-        self.title = title or os.path.basename(path) if path else self.tr("Unknown artist")
-        self.artist = artist or self.tr("Unknown artist")
+        self.title = title or os.path.basename(path) if path else "Unknown title"
+        self.artist = artist or "Unknown artist"
         self.year = None
         self.album = None
         self.duration = None
@@ -28,6 +27,12 @@ class Media(QtCore.QObject):
 
     def __eq__(self, other):
         return isinstance(other, Media) and other.id == self.id
+
+    def __getstate__(self):
+        return self.__dict__.copy()
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
 
 class MediaItem(list):

@@ -87,9 +87,11 @@ class BaseWindow(QMainWindow, Loadable, Savable):
         self.resize(int(self.guiSettings.value("window/width", 640)), int(self.guiSettings.value("window/height", 480)))
         if self.guiSettings.setValue("window/maximized", True):
             self.setWindowState(QtCore.Qt.WindowMaximized)
+        self.playlistsContainer.load()
 
     def save(self):
         self.guiSettings.setValue("splitter/sizes", self.splitter.sizes())
         self.guiSettings.setValue("window/maximized", self.windowState() & QtCore.Qt.WindowMaximized)
         self.guiSettings.setValue("window/width", self.width())
         self.guiSettings.setValue("window/height", self.height())
+        self.playlistsContainer.save()

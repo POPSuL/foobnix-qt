@@ -7,6 +7,10 @@ from . import Savable, Loadable
 
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config", "foobnix-qt")
 CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "foobnix-qt")
+if not os.path.exists(CONFIG_DIR):
+    os.makedirs(CONFIG_DIR)
+if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
 
 
 class Settings(QtCore.QSettings, Savable, Loadable):

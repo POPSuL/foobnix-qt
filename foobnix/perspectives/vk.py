@@ -152,7 +152,8 @@ class VKPerspective(BasePerspective):
         if item:
             medias = item.toMedia()
             if medias:
-                self.context.getPlaylistManager().createPlaylist("VK", medias)
+                self.context.getPlaylistManager().createPlaylist(item.text(), medias)
+                self.context.getControls().play()
             else:
                 logging.warning("No medias found")
         else:

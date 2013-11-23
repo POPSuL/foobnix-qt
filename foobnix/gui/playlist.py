@@ -2,11 +2,15 @@
 
 __author__ = 'popsul'
 
+import os
+import pickle
 import logging
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
+from foobnix import Loadable, Savable
 from foobnix.gui import TabbedContainer
 from foobnix.models import StandartPlaylistModel, Media, MediaItem
+from foobnix.settings import CACHE_DIR
 
 
 class RatingDelegate(QItemDelegate):
@@ -231,8 +235,11 @@ class Playlist(QTreeView):
             self.playAt(i)
             return
 
+    def getAllMedias(self):
+        return [self.model.item(k).media for k in range(0, self.model.rowCount())]
 
-class PlaylistsContainer(TabbedContainer):
+
+class PlaylistsContainer(TabbedContainer, Savable, Loadable):
 
     def __init__(self, context):
         """
@@ -241,11 +248,38 @@ class PlaylistsContainer(TabbedContainer):
         super().__init__()
         self.context = context
         self.controls = self.context.getControls()
-        self.createPlaylist()
         self.controls.needNext.connect(self.playNext)
         self.controls.needPrev.connect(self.playPrev)
         self.controls.needCurrent.connect(self.playCurrent)
         self.controls.stateChanged.connect(self.stateChanged)
+
+    def load(self):
+        #try:
+            if not os.path.exists(os.path.join(CACHE_DIR, "playlists")):
+                self.createPlaylist()
+                return
+            with open(os.path.join(CACHE_DIR, "playlists"), "rb") as f:
+                pickled = f.read()
+                playlists = pickle.loads(pickled)
+                if not isinstance(playlists, list):
+                    raise Exception("Illegal data type")
+                playlists.reverse()
+                for p in playlists:
+                    self.createPlaylist(p["title"], p["medias"])
+        #except:
+        #    self.createPlaylist()
+
+    def save(self):
+        playlists = []
+        for i in range(0, self.count()):
+            title = self.tabText(i)
+            widget = self.widget(i)
+            playlists.append({
+                "title": title,
+                "medias": widget.getAllMedias()
+            })
+        with open(os.path.join(CACHE_DIR, "playlists"), "wb") as f:
+            pickle.dump(playlists, f, 3)
 
     def __createPlaylist(self, media):
         return Playlist(self.context, media=media)
