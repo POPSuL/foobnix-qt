@@ -31,6 +31,7 @@ class PlaybackControl(Control):
     shuffleModeChanged = pyqtSignal(int, name="shuffleModeChanged")
     positionChanged = pyqtSignal(int, int, name="positionChanged")
     seekableChanged = pyqtSignal(bool, name="seekableChanged")
+    titleChanged = pyqtSignal(str, name="tagsReceived")
     needNext = pyqtSignal(bool, bool, name="needNext")
     needPrev = pyqtSignal(bool, name="needRandom")
     needCurrent = pyqtSignal(name="needCurrent")
@@ -47,9 +48,11 @@ class PlaybackControl(Control):
         self._shuffleMode = self.ShuffleOff
         self._volume = 50.
         self._lastPlayed = None
+        self._previousTitle = None
         self.engine.positionChanged.connect(self.positionChanged.emit)
         self.engine.seekableChanged.connect(self.seekableChanged.emit)
         self.engine.finished.connect(self._finished)
+        self.engine.metaChanged.connect(self._metaChanged)
 
     def load(self):
         self.setShuffleMode(int(self.settings.value("playback/shuffle", self.ShuffleOff)))
@@ -136,3 +139,14 @@ class PlaybackControl(Control):
     def _finished(self):
         logging.debug("_finished signal received")
         self.playNext()
+
+    def _metaChanged(self, meta):
+        if "TITLE" in meta and "ARTIST" in meta:
+            title = meta["TITLE"]
+            artist = meta["ARTIST"]
+            title = ", ".join(title) if isinstance(title, list) else title
+            artist = ", ".join(artist) if isinstance(artist, list) else artist
+            fullTitle = " - ".join([artist, title])
+            if self._previousTitle != fullTitle:
+                self.titleChanged.emit(fullTitle)
+                self._previousTitle = fullTitle

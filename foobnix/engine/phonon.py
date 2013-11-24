@@ -20,7 +20,7 @@ class PhononEngine(MediaEngine):
         self.mediaObject.setTickInterval(500)
         self.mediaObject.tick.connect(self._tick)
         self.mediaObject.stateChanged.connect(self._stateChanged)
-        self.metaInformationResolver.stateChanged.connect(self._metaStateChanged)
+        self.mediaObject.metaDataChanged.connect(self._metadataChanged)
         self.mediaObject.currentSourceChanged.connect(self._currentSourceChanged)
         self.mediaObject.aboutToFinish.connect(self._aboutToFinish)
         self.mediaObject.finished.connect(self.finished.emit)
@@ -44,8 +44,10 @@ class PhononEngine(MediaEngine):
         elif newState == Phonon.ErrorState:
             self.stateChanged.emit(self.ErrorState)
 
-    def _metaStateChanged(self, newState, oldState):
-        logging.debug("_metaStateChanged(%d, %d)" % (newState, oldState))
+    def _metadataChanged(self):
+        logging.debug("_metadataChanged()")
+        logging.debug(self.mediaObject.metaData())
+        self.metaChanged.emit(self.mediaObject.metaData())
 
     def _currentSourceChanged(self, source):
         pass

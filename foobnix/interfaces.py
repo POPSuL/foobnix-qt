@@ -70,6 +70,15 @@ class GUIContext(Context):
         """
         return self.__interface.window
 
+    def showBusyIndicator(self):
+        self.getBaseWindow().showBusyIndicator()
+
+    def hideBusyIndicator(self):
+        self.getBaseWindow().hideBusyIndicator()
+
+    def setStatusText(self, text):
+        self.getBaseWindow().setTitleLabelText(text)
+
     def getSettings(self, container):
         """
         @type container: str

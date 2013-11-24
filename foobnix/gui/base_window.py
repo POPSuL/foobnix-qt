@@ -9,7 +9,7 @@ from foobnix.gui.perspectives import PerspectivesController
 from foobnix.gui.search import SearchBar
 from foobnix.gui.playback import PlaybackControls
 from foobnix.gui.playlist import PlaylistsContainer
-
+from foobnix.util import lookupResource
 
 class BaseWindow(QMainWindow, Loadable, Savable):
 
@@ -49,7 +49,17 @@ class BaseWindow(QMainWindow, Loadable, Savable):
         self.splitter.addWidget(self.leftHBoxWrapper)
         self.splitter.addWidget(rightHBoxWrapper)
 
-        self.splitter.splitterMoved.connect(self.splitterMovedHandler)
+        ## statusbar widgets
+        self.titleLabel = QLabel(self.tr("Stopped"))
+        self.titleLabel.setToolTip(self.tr("Currently playing"))
+
+        self.busyLabel = QLabel()
+        self.busyMovie = QMovie(lookupResource("images/spinner.gif"))
+        self.busyLabel.setMovie(self.busyMovie)
+        self.busyLabel.setToolTip(self.tr("Something is up"))
+
+        self.busyMovie.start()
+        self.busyIndicatorAcquiring = 0
 
         ## base container
         self.vbox = QVBoxLayout()
@@ -60,11 +70,24 @@ class BaseWindow(QMainWindow, Loadable, Savable):
         wrapper = QWidget()
         wrapper.setLayout(self.vbox)
         self.setCentralWidget(wrapper)
+        self.statusBar().addWidget(self.titleLabel, 2)
+        self.statusBar().addWidget(self.busyLabel, 0)
+
         self.buildMenu()
 
-    def splitterMovedHandler(self, *args):
-        pass
-        #self.guiSettings.setValue("splitter/sizes", self.splitter.sizes())
+    def setTitleLabelText(self, text):
+        self.titleLabel.setText(text)
+
+    def showBusyIndicator(self):
+        self.busyIndicatorAcquiring += 1
+        self.busyLabel.setVisible(True)
+
+    def hideBusyIndicator(self):
+        self.busyIndicatorAcquiring -= 1
+        if self.busyIndicatorAcquiring < 0:
+            self.busyIndicatorAcquiring = 0
+        if self.busyIndicatorAcquiring == 0:
+            self.busyLabel.setVisible(False)
 
     def setPerspectiveController(self, pc):
         assert isinstance(pc, PerspectivesController), "argument 1 must be an instance of PerspectiveController"

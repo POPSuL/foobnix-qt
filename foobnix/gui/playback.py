@@ -20,6 +20,7 @@ class VolumeController(QSlider):
         self.setRange(0, 100)
         self.setValue(self.controls.volume())
         self.controls.volumeChaged.connect(self.setValue)
+        self.controls.volumeChaged.connect(lambda x: self.setToolTip("%d%%" % x))
         self.valueChanged.connect(lambda x: self.controls.setVolume(float(x)))
 
     def mousePressEvent(self, ev):
@@ -53,9 +54,12 @@ class SeekableProgressbar(QProgressBar):
             ev.accept()
         super(QProgressBar, self).mousePressEvent(ev)
 
-    def onPositionChanged(self, current, total):
-        self.setMaximum(total)
-        self.setValue(current)
+    def onPositionChanged(self, current, total, force=False):
+        if self.isSeekable or force:
+            self.setMaximum(total)
+            self.setValue(current)
+        else:
+            self._valueChanged(current)
 
     def _valueChanged(self, newValue):
         nv = newValue / 1000
@@ -65,7 +69,7 @@ class SeekableProgressbar(QProgressBar):
 
     def seekableChanged(self, seekable):
         self.isSeekable = seekable
-        self.onPositionChanged(1, 1)
+        self.onPositionChanged(1, 1, True)
 
 
 class PlaybackControls(QHBoxLayout):
@@ -82,12 +86,19 @@ class PlaybackControls(QHBoxLayout):
 
         ## buttons
         self.stopButton = QPushButton(QIcon.fromTheme("media-playback-stop"), "")
+        self.stopButton.setToolTip(self.tr("Stop"))
         self.playButton = QPushButton(QIcon.fromTheme("media-playback-start"), "")
+        self.playButton.setToolTip(self.tr("Play/Resume"))
         self.pauseButton = QPushButton(QIcon.fromTheme("media-playback-pause"), "")
+        self.pauseButton.setToolTip(self.tr("Pause"))
         self.prevButton = QPushButton(QIcon.fromTheme("media-seek-backward"), "")
+        self.prevButton.setToolTip(self.tr("Previous track"))
         self.nextButton = QPushButton(QIcon.fromTheme("media-seek-forward"), "")
+        self.nextButton.setToolTip(self.tr("Next track"))
         self.queueModeButton = QPushButton(QIcon.fromTheme("media-playlist-shuffle"), "")
+        self.queueModeButton.setToolTip(self.tr("Shuffle mode"))
         self.repeatModeButton = QPushButton(QIcon.fromTheme("media-playlist-repeat"), "")
+        self.repeatModeButton.setToolTip(self.tr("Repeat mode"))
         buttonsWrapper = QHBoxLayout()
         buttonsWrapper.setSpacing(3)
         buttonsWrapper.setContentsMargins(0, 0, 0, 0)
@@ -130,6 +141,8 @@ class PlaybackControls(QHBoxLayout):
         self.repeatModeButton.setChecked(self.controls.repeatMode() == PlaybackControl.RepeatAll)
         self.repeatModeButton.toggled.connect(self.repeatToggled)
         self.controls.repeatModeChanged.connect(self.repeatModeChanged)
+
+        self.controls.titleChanged.connect(lambda x: self.context.setStatusText(x))
 
     def queueToggled(self, pressed):
         if pressed:
