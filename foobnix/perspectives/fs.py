@@ -11,7 +11,7 @@ from foobnix.util import createMediasForPaths
 from foobnix.perspectives import BasePerspective
 
 
-supportedFiles = ["*.mp3", "*.m3u", "*.wav", "*.flac", "*.mp4", "*.aac", "*.m4a", "*.cue"]
+supportedFiles = ["*.mp3", "*.m3u", "*.pls", "*.wav", "*.flac", "*.mp4", "*.aac", "*.m4a", "*.cue"]
 
 
 class FSTreeView(QTreeView):

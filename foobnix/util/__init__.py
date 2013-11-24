@@ -3,6 +3,7 @@
 __author__ = 'popsul'
 
 import os
+import sys
 from foobnix.models import Media
 
 
@@ -23,8 +24,38 @@ def createMediasForPaths(paths):
         paths = [paths]
     medias = []
     for path in paths:
-        for (d, dirs, files) in os.walk(path):
-            medias.append(Media(d, isMeta=True))
-            for file in files:
-                medias.append(Media(os.path.join(d, file)))
+        if os.path.isdir(path):
+            for (d, dirs, files) in os.walk(path):
+                medias.append(Media(d, isMeta=True))
+                for file in files:
+                    medias.append(Media(os.path.join(d, file)))
+        elif os.path.isfile(path):
+            medias.append(Media(path))
     return medias
+
+
+def lookupResource(name):
+    if not name:
+        return None
+
+    paths = ["/usr/local/share/pixmaps",
+             "/usr/local/share/foobnix-qt",
+             "/usr/share/pixmaps",
+             "/usr/share/foobnix-qt",
+             "share/pixmaps",
+             "share/foobnix-qt",
+             "share/pixmaps",
+             "./",
+             name]
+
+    if len(sys.path) > 1:
+        paths.append(sys.path[0])
+        paths.append(os.path.join(sys.path[0], "share/pixmaps"))
+        paths.append(os.path.join(sys.path[0], "share/foobnix-qt"))
+
+    for path in paths:
+        full_path = os.path.join(path, name)
+        if os.path.exists(full_path):
+            return full_path
+
+    raise FileNotFoundError("File %s doesn't exists" % name)

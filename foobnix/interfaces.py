@@ -7,6 +7,7 @@ from .gui.perspectives import PerspectivesController
 from .perspectives.fs import FSPerspective
 from .perspectives.info import InfoPerspective
 from .perspectives.vk import VKPerspective
+from .perspectives.radio import RadioPerspective
 
 
 class Interface(QtCore.QObject, Loadable, Savable):
@@ -27,6 +28,7 @@ class GUIInterface(Interface):
         self.perspectives = PerspectivesController(self.createContext())
         self.perspectives.attachPerspective(FSPerspective(self.createContext()))
         self.perspectives.attachPerspective(VKPerspective(self.createContext()))
+        self.perspectives.attachPerspective(RadioPerspective(self.createContext()))
         self.perspectives.attachPerspective(InfoPerspective(self.createContext()))
         self.window.setPerspectiveController(self.perspectives)
 

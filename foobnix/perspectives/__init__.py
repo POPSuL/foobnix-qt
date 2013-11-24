@@ -11,8 +11,8 @@ class BasePerspective(QObject):
 
     activated = pyqtSignal(name="activated")
 
-    def __init__(self):
-        super(BasePerspective, self).__init__()
+    def __init__(self, context=None):
+        super().__init__()
 
     def getName(self):
         pass

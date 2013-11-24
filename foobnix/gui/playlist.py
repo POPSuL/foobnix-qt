@@ -5,10 +5,12 @@ __author__ = 'popsul'
 import os
 import pickle
 import logging
+from concurrent.futures import ThreadPoolExecutor, Future
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix import Loadable, Savable
 from foobnix.gui import TabbedContainer
+from foobnix.util.playlist import expandPlaylist, isPlaylist
 from foobnix.models import StandartPlaylistModel, Media, MediaItem
 from foobnix.settings import CACHE_DIR
 
@@ -57,31 +59,16 @@ class PlaylistItem(QTreeWidgetItem):
         super(PlaylistItem, self).__init__(None)
 
 
-class DummyPlaylistItem(PlaylistItem):
-
-    count = 0
-
-    def __init__(self):
-        super(DummyPlaylistItem, self).__init__()
-        count = self.getCount()
-        self.setText(0, str(count))
-        for i in range(1, 5):
-            self.setText(i, "Dummy %d" % count)
-        self.setData(5, 0, 5)
-
-    @staticmethod
-    def getCount():
-        DummyPlaylistItem.count += 1
-        return DummyPlaylistItem.count
-
-
 class Playlist(QTreeView):
+
+    itemAdded = QtCore.pyqtSignal(MediaItem, name="itemAdded")
 
     def __init__(self, context, media=None):
         """
         @type context: GUIContext
         """
         super().__init__()
+        self.updateWorker = ThreadPoolExecutor(max_workers=1)
         self.context = context
         self.model = StandartPlaylistModel()
         self.setModel(self.model)
@@ -101,8 +88,18 @@ class Playlist(QTreeView):
         self.header().setResizeMode(1, QHeaderView.Fixed)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.model.modelReset.connect(self.modelReset)
+        self.itemAdded.connect(self._itemAddedSlot)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.openContextMenu)
 
         if media:
+            for (i, m) in enumerate(media):
+                if not m.isMeta and isPlaylist(m):
+                    media[i].isMeta = True
+                    media[i+1:i+1] = expandPlaylist(m)
+                    break
+                if not m.isMeta and m.path:
+                    break
             self.addMedias(media)
 
         self.doubleClicked.connect(self.dbclicked)
@@ -110,9 +107,31 @@ class Playlist(QTreeView):
     def modelReset(self):
         print("Model reseted")
 
+    def openContextMenu(self, point):
+        """
+        @type point: QPoint
+        """
+        selection = self.selectionModel().selectedRows()
+        menu = QMenu()
+        menu.addAction(QIcon.fromTheme("edit-delete"), self.tr("Delete"),
+                       self.deleteSelected, QKeySequence(QtCore.Qt.Key_Delete))
+        menu.exec(self.mapToGlobal(point))
+
+    def deleteSelected(self):
+        while 1:
+            selection = self.selectionModel().selectedIndexes()
+            if selection:
+                for index in selection:
+                    self.model.takeRow(index.row())
+                    break
+            else:
+                break
+
     def addMedia(self, media):
         assert isinstance(media, Media), "unrecognized media type"
-        self.model.appendRow(MediaItem(media))
+        item = MediaItem(media)
+        self.model.appendRow(item)
+        self.itemAdded.emit(item)
 
     def addMedias(self, medias):
         assert isinstance(medias, list), "medias must be a list"
@@ -235,6 +254,29 @@ class Playlist(QTreeView):
             self.playAt(i)
             return
 
+    def _itemAddedSlot(self, item):
+        if item.media.isMeta or not isPlaylist(item.media):
+            return
+
+        print("is playlist!")
+
+        def do_update(f):
+            print("future done")
+            index = self.model.indexFromItem(item[0])
+            if not index.isValid():
+                return
+            expanded = f.result()
+            if expanded:
+                i = index.row()
+                taked = self.model.takeRow(i)[0]
+                taked.media.isMeta = True
+                self.model.insertRow(i, MediaItem(taked.media))
+                for (idx, media) in enumerate(expanded):
+                    self.model.insertRow(i + idx + 1, MediaItem(media))
+        future = self.updateWorker.submit(expandPlaylist, item.media)
+        future.add_done_callback(do_update)
+        print("submitted")
+
     def getAllMedias(self):
         return [self.model.item(k).media for k in range(0, self.model.rowCount())]
 
@@ -254,7 +296,7 @@ class PlaylistsContainer(TabbedContainer, Savable, Loadable):
         self.controls.stateChanged.connect(self.stateChanged)
 
     def load(self):
-        #try:
+        try:
             if not os.path.exists(os.path.join(CACHE_DIR, "playlists")):
                 self.createPlaylist()
                 return
@@ -265,19 +307,22 @@ class PlaylistsContainer(TabbedContainer, Savable, Loadable):
                     raise Exception("Illegal data type")
                 playlists.reverse()
                 for p in playlists:
+                    logging.debug("restoring %s with %d medias" % (p["title"], len(p["medias"])))
                     self.createPlaylist(p["title"], p["medias"])
-        #except:
-        #    self.createPlaylist()
+        except:
+            self.createPlaylist()
 
     def save(self):
         playlists = []
         for i in range(0, self.count()):
             title = self.tabText(i)
             widget = self.widget(i)
-            playlists.append({
+            p = {
                 "title": title,
                 "medias": widget.getAllMedias()
-            })
+            }
+            playlists.append(p)
+            logging.debug("storing %s with %d medias" % (p["title"], len(p["medias"])))
         with open(os.path.join(CACHE_DIR, "playlists"), "wb") as f:
             pickle.dump(playlists, f, 3)
 

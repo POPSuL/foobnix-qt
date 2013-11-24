@@ -22,7 +22,7 @@ class Media():
         self.year = None
         self.album = None
         self.duration = None
-        self.isRemote = True if path.startswith("http://") else False
+        self.isRemote = True if path and path.startswith("http://") else False
         self.isMeta = isMeta
 
     def __eq__(self, other):
@@ -45,11 +45,13 @@ class MediaItem(list):
         self.append(QtGui.QStandardItem(QtGui.QIcon(), ""))
         if media.isMeta:
             self.append(QtGui.QStandardItem(""))
-            item = QtGui.QStandardItem(self.media.title)
-            self.append(item)
+            item = QtGui.QStandardItem(1, 3)
+            item.setText(self.media.title)
             defFont = item.font()
             defFont.setBold(True)
             item.setFont(defFont)
+            item.setColumnCount(3)
+            self.append(item)
         else:
             self.append(QtGui.QStandardItem(self.media.number))
             self.append(QtGui.QStandardItem(self.media.artist))

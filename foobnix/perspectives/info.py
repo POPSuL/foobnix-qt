@@ -4,8 +4,9 @@ __author__ = 'popsul'
 
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
-from foobnix.perspectives import BasePerspective
 from foobnix.gui import InteractiveLabel
+from foobnix.util import lookupResource
+from foobnix.perspectives import BasePerspective
 
 
 class BaseInfoSection(QtCore.QObject):
@@ -141,7 +142,7 @@ class InfoPerspective(BasePerspective):
         self.sectionLabels = QVBoxLayout()
         self.sectionsContainer = QStackedLayout()
         self.sectionsContainer.addWidget(QLabel())  # dummy
-        self.cover = QPixmap("./share/foobnix/cover.jpg")
+        self.cover = QPixmap(lookupResource("images/cover.jpg"))
         self.coverWrapper = QLabel()
         self.coverWrapper.setFixedSize(128, 128)
         self.coverWrapper.setPixmap(self.cover.scaled(128, 128, QtCore.Qt.KeepAspectRatio))
