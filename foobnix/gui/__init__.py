@@ -4,12 +4,25 @@ from PyQt4 import QtCore
 from PyQt4.QtGui import *
 
 
+class MidButtonCloseableTabBar(QTabBar):
+
+    def mouseReleaseEvent(self, ev):
+        """
+        @type ev: QMouseEvent
+        """
+        if ev.button() == QtCore.Qt.MidButton:
+            self.tabCloseRequested.emit(self.tabAt(ev.pos()))
+        super().mouseReleaseEvent(ev)
+
+
 class TabbedContainer(QTabWidget):
 
     def __init__(self):
         super(TabbedContainer, self).__init__()
-        self.setTabsClosable(True)
+        self.setTabBar(MidButtonCloseableTabBar())
         self.tabBar().setExpanding(False)
+        self.setTabsClosable(True)
+        self.setMovable(True)
         self.tabCloseRequested.connect(self.onTabCloseRequest)
 
     def onTabCloseRequest(self, pos):

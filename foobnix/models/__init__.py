@@ -17,8 +17,13 @@ class Media():
             self.id = None
         self.parent = parent
         self.number = None
-        self.title = title or os.path.basename(path) if path else "Unknown title"
-        self.artist = artist or "Unknown artist"
+        if title:
+            self.title = title
+        elif os.path.basename(path):
+            self.title = os.path.basename(path)
+        else:
+            self.title = QtCore.QObject().tr("Unknown title")
+        self.artist = artist or QtCore.QObject().tr("Unknown artist")
         self.year = None
         self.album = None
         self.duration = None
@@ -33,6 +38,9 @@ class Media():
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+
+    def __str__(self):
+        return "%s - %s" % (self.artist, self.title)
 
 
 class MediaItem(list):

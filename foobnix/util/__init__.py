@@ -27,7 +27,7 @@ def createMediasForPaths(paths):
         if os.path.isdir(path):
             for (d, dirs, files) in os.walk(path):
                 medias.append(Media(d, isMeta=True))
-                for file in files:
+                for file in sorted(files):
                     medias.append(Media(os.path.join(d, file)))
         elif os.path.isfile(path):
             medias.append(Media(path))

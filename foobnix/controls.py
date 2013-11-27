@@ -51,6 +51,7 @@ class PlaybackControl(Control):
         self._previousTitle = None
         self.engine.positionChanged.connect(self.positionChanged.emit)
         self.engine.seekableChanged.connect(self.seekableChanged.emit)
+        self.engine.stateChanged.connect(self._stateChanged)
         self.engine.finished.connect(self._finished)
         self.engine.metaChanged.connect(self._metaChanged)
 
@@ -70,7 +71,7 @@ class PlaybackControl(Control):
             logging.debug(media.path)
         else:
             logging.debug("Empty media")
-        if self.engine.isPaused():
+        if self.engine.isPaused() and not force:
             self.engine.play()
         elif not media and self.engine.isPlaying() and self._lastPlayed:
             self.engine.play(self._lastPlayed, True)
@@ -139,6 +140,11 @@ class PlaybackControl(Control):
     def _finished(self):
         logging.debug("_finished signal received")
         self.playNext()
+
+    def _stateChanged(self, new):
+        if new == self.engine.ErrorState:
+            logging.error("ErrorState caught! Playing next...")
+            self.playNext()
 
     def _metaChanged(self, meta):
         if "TITLE" in meta and "ARTIST" in meta:

@@ -281,6 +281,17 @@ class Playlist(QTreeView):
         return [self.model.item(k).media for k in range(0, self.model.rowCount())]
 
 
+class PlaylistTabBar(QTabBar):
+
+    def mouseReleaseEvent(self, ev):
+        """
+        @type ev: QMouseEvent
+        """
+        if ev.button() == QtCore.Qt.MidButton:
+            self.tabCloseRequested.emit(self.tabAt(ev.pos()))
+        super().mouseReleaseEvent(ev)
+
+
 class PlaylistsContainer(TabbedContainer, Savable, Loadable):
 
     def __init__(self, context):

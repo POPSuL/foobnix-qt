@@ -15,7 +15,7 @@ from foobnix.services.vk import VKService
 class VKTreeItem(QStandardItem):
 
     def __init__(self, title, parent=None, service=False, trackEntry=False, userEntry=False):
-        super(VKTreeItem, self).__init__(title)
+        super().__init__(title)
 
         self.userEntry = userEntry
         self.trackEntry = trackEntry
@@ -64,13 +64,13 @@ class VKTreeItem(QStandardItem):
 class VKTreeLoadingItem(VKTreeItem):
 
     def __init__(self):
-        super(VKTreeLoadingItem, self).__init__("Loading", service=True)
+        super().__init__("Loading", service=True)
 
 
 class VKTreeModel(QStandardItemModel):
 
     def __init__(self):
-        super(VKTreeModel, self).__init__(0, 1)
+        super().__init__(0, 1)
         self.clear()
         self.appendRow(VKTreeLoadingItem())
 
@@ -84,7 +84,7 @@ class VKTreeWidget(QTreeView):
     itemDoubleClicked = QtCore.pyqtSignal(QtCore.QModelIndex, name="itemDoubleClicked")
 
     def __init__(self):
-        super(VKTreeWidget, self).__init__()
+        super().__init__()
         self.model = VKTreeModel()
         self.setModel(self.model)
         self.setDragEnabled(True)
@@ -107,7 +107,7 @@ class VKPerspective(BasePerspective):
         """
         @type context: GUIContext
         """
-        super(VKPerspective, self).__init__()
+        super().__init__()
         self.context = context
         self.widget = VKTreeWidget()
         self.activated.connect(self._activated)

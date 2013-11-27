@@ -59,7 +59,7 @@ class PhononEngine(MediaEngine):
         """
         @type media: Media
         """
-        if self.isPaused():
+        if self.isPaused() and not force:
             self.mediaObject.play()
         elif force or (self.isPlaying() and media != self.prevMedia) or (self.isStopped() and media):
             source = Phonon.MediaSource(media.path)

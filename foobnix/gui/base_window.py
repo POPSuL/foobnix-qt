@@ -5,11 +5,13 @@ __author__ = 'popsul'
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix import Loadable, Savable
-from foobnix.gui.perspectives import PerspectivesController
-from foobnix.gui.search import SearchBar
-from foobnix.gui.playback import PlaybackControls
-from foobnix.gui.playlist import PlaylistsContainer
+from .perspectives import PerspectivesController
+from .search import SearchBar
+from .playback import PlaybackControls
+from .playlist import PlaylistsContainer
+from .preferences import PreferencesWindow
 from foobnix.util import lookupResource
+
 
 class BaseWindow(QMainWindow, Loadable, Savable):
 
@@ -75,6 +77,8 @@ class BaseWindow(QMainWindow, Loadable, Savable):
 
         self.buildMenu()
 
+        self.preferences = PreferencesWindow(self)
+
     def setTitleLabelText(self, text):
         self.titleLabel.setText(text)
 
@@ -100,7 +104,7 @@ class BaseWindow(QMainWindow, Loadable, Savable):
         quit.triggered.connect(QApplication.instance().quit)
 
     def openPreferences(self):
-        pass
+        self.preferences.open()
 
     def load(self):
         savedSizes = self.guiSettings.value("splitter/sizes", None)
