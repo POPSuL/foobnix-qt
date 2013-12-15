@@ -84,9 +84,21 @@ class GUIContext(Context):
     def getSettings(self, container):
         """
         @type container: str
-        @rtype Settings
+        @rtype SettingsContainer
         """
         return self.__coreContext.getSettings(container)
+
+    def getSettingProviders(self):
+        """
+        @rtype SettingsProvider[]
+        """
+        return self.__coreContext.getSettingProviders()
+
+    def registerSettingProvider(self, provider):
+        """
+        @type provider: SettingsProvider
+        """
+        self.__coreContext.registerSettingProvider(provider)
 
     def getControls(self):
         """

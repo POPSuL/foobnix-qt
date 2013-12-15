@@ -7,6 +7,7 @@ from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from . import Loadable, Savable, Context
 from .settings import SettingsContainer
+from .settingsprovider import SettingsProvider
 from .interfaces import GUIInterface, DBusInterface
 from .controls import PlaybackControl
 from .engine.phonon import PhononEngine
@@ -108,6 +109,7 @@ class CoreContext(Context):
         """
         super().__init__()
         self.__instance = instance
+        self.__settingProviders = []
 
     def getControls(self):
         """
@@ -118,7 +120,7 @@ class CoreContext(Context):
     def getSettings(self, container):
         """
         @type container: str
-        @rtype foobnix.settings.SettingsContainer
+        @rtype SettingsContainer
         """
         return self.__instance.getSettings().getContainer(container)
 
@@ -127,3 +129,13 @@ class CoreContext(Context):
         @rtype MediaEngine
         """
         return self.__instance.getEngine()
+
+    def getSettingProviders(self):
+        """
+        @rtype SettingsProvider[]
+        """
+        return self.__settingProviders
+
+    def registerSettingProvider(self, provider):
+        assert isinstance(provider, SettingsProvider), "provider must be instance of SettingsProvider"
+        self.__settingProviders.append(provider)

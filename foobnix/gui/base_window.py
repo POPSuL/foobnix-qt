@@ -10,7 +10,28 @@ from .search import SearchBar
 from .playback import PlaybackControls
 from .playlist import PlaylistsContainer
 from .preferences import PreferencesWindow
+from foobnix.settingsprovider import SettingsProvider
 from foobnix.util import lookupResource
+
+
+class GeneralSettingsProvider(SettingsProvider):
+
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
+        super().__init__()
+        self.context = context
+
+    def getTab(self):
+        l = QFormLayout()
+        l.addRow(self.tr("Blah:"), QLineEdit())
+        w = QWidget()
+        w.setLayout(l)
+        return w, self.tr("General")
+
+    def save(self):
+        pass
 
 
 class BaseWindow(QMainWindow, Loadable, Savable):
@@ -77,7 +98,9 @@ class BaseWindow(QMainWindow, Loadable, Savable):
 
         self.buildMenu()
 
-        self.preferences = PreferencesWindow(self)
+        self.context.registerSettingProvider(GeneralSettingsProvider(self.context))
+
+        self.preferences = PreferencesWindow(self.context, parent=self)
 
     def setTitleLabelText(self, text):
         self.titleLabel.setText(text)
@@ -101,7 +124,9 @@ class BaseWindow(QMainWindow, Loadable, Savable):
         prefs = self.fileMenu.addAction(QIcon.fromTheme("preferences-desktop"), self.tr("&Preferences"))
         quit = self.fileMenu.addAction(QIcon.fromTheme("application-exit"), self.tr("&Quit"))
         prefs.triggered.connect(self.openPreferences)
+        prefs.setShortcut(QKeySequence(self.tr("Ctrl+Shift+P")))
         quit.triggered.connect(QApplication.instance().quit)
+        quit.setShortcut(QKeySequence(self.tr("Ctrl+Q")))
 
     def openPreferences(self):
         self.preferences.open()

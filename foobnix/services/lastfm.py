@@ -2,17 +2,60 @@ __author__ = 'popsul'
 
 import time
 import logging
+from hashlib import md5
 from concurrent.futures import *
 from PyQt4.QtCore import *
+from PyQt4.QtGui import *
 from . import BaseService
-from foobnix.models import Media
+from foobnix.settingsprovider import SettingsProvider
 from foobnix.thirdparty import pylast
 
 API_KEY = "5249a9b0abb2209ecbfb31b3cec3b9ba"
 SECRET_KEY = "fe8beba163b08899da75ea46affe1904"
 
-LOGIN = "popsul"
-HASH = ""
+SETTINGS = "lastfm"
+
+
+class LastFMSettingsProvider(SettingsProvider):
+
+    def __init__(self, context):
+        """
+        @type context: GUIContext
+        """
+        super().__init__()
+        self.context = context
+
+        self.loginEdit = None
+        self.passwordEdit = None
+        self.networkSwitcher = None
+
+    def getTab(self):
+        l = QFormLayout()
+        w = QWidget()
+        s = self.context.getSettings(SETTINGS)
+        l.setLabelAlignment(Qt.AlignRight)
+        l.setFormAlignment(Qt.AlignLeft)
+        self.loginEdit = QLineEdit(str(s.value("auth/login", "")))
+        self.passwordEdit = QLineEdit(str(s.value("auth/password", "")))
+        self.passwordEdit.setEchoMode(QLineEdit.Password)
+        self.networkSwitcher = QCheckBox()
+        if s.value("network/selected", "lastfm") == "librefm":
+            self.networkSwitcher.setCheckState(Qt.Checked)
+        l.addRow(self.tr("Login:"), self.loginEdit)
+        l.addRow(self.tr("Password:"), self.passwordEdit)
+        l.addRow(self.tr("Use Libre.FM instead of Last.FM:"), self.networkSwitcher)
+        w.setLayout(l)
+        return w, self.tr("Last.FM")
+
+    def save(self):
+        s = self.context.getSettings(SETTINGS)
+        s.setValue("auth/login", self.loginEdit.text())
+        if str(s.value("auth/password", "")) != self.passwordEdit.text():
+            s.setValue("auth/password", md5(self.passwordEdit.text().encode("utf-8")).hexdigest())
+        if self.networkSwitcher.checkState() == Qt.Checked:
+            s.setValue("network/selected", "librefm")
+        else:
+            s.setValue("network/selected", "lastfm")
 
 
 class LastFMService(BaseService):
@@ -35,6 +78,11 @@ class LastFMService(BaseService):
         if self.settings.value("network/selected", "lastfm") == "librefm":
             self.useLibrefm = True
 
+        self.login = self.settings.value("auth/login", "")
+        self.password = self.settings.value("auth/password", "")
+
+        self.context.registerSettingProvider(LastFMSettingsProvider(self.context))
+
     @pyqtSlot()
     def activate(self):
         logging.debug("service activated")
@@ -48,10 +96,10 @@ class LastFMService(BaseService):
             time.sleep(1)
             try:
                 if self.useLibrefm:
-                    self.network = pylast.LibreFMNetwork(username=LOGIN, password_hash=HASH,
+                    self.network = pylast.LibreFMNetwork(username=self.login, password_hash=self.password,
                                                          api_key=API_KEY, api_secret=SECRET_KEY)
                 else:
-                    self.network = pylast.LastFMNetwork(username=LOGIN, password_hash=HASH,
+                    self.network = pylast.LastFMNetwork(username=self.login, password_hash=self.password,
                                                         api_key=API_KEY, api_secret=SECRET_KEY)
                 return True
             except Exception as e:
