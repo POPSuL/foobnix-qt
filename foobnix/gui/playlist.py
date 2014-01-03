@@ -9,8 +9,9 @@ from concurrent.futures import ThreadPoolExecutor, Future
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix import Loadable, Savable
-from foobnix.gui import TabbedContainer
+from foobnix.gui import TabbedContainer, MidButtonCloseableTabBar
 from foobnix.util.playlist import expandPlaylist, isPlaylist
+from foobnix.util.tags import fillTags
 from foobnix.models import StandartPlaylistModel, Media, MediaItem
 from foobnix.settings import CACHE_DIR
 
@@ -158,6 +159,8 @@ class Playlist(QTreeView):
         item = self.model.item(row)
         assert isinstance(item, QStandardItem), "unrecognized item type"
         assert isinstance(item.media, Media), "unrecognized media"
+        if item.media.isMeta:
+            return False
         self.context.getControls().play(item.media, True)
 
     def setPlayIcon(self, media):
@@ -277,19 +280,70 @@ class Playlist(QTreeView):
         future.add_done_callback(do_update)
         print("submitted")
 
+    def _doUpdateMedia(self, media):
+        def updated(f):
+            pass
+        future = self.updateWorker.submit(fillTags, media)
+        future.add_done_callback(updated)
+
     def getAllMedias(self):
         return [self.model.item(k).media for k in range(0, self.model.rowCount())]
 
 
-class PlaylistTabBar(QTabBar):
+class PlaylistTabBar(MidButtonCloseableTabBar):
 
-    def mouseReleaseEvent(self, ev):
-        """
-        @type ev: QMouseEvent
-        """
-        if ev.button() == QtCore.Qt.MidButton:
-            self.tabCloseRequested.emit(self.tabAt(ev.pos()))
-        super().mouseReleaseEvent(ev)
+    newPlaylistRequest = QtCore.pyqtSignal(name="newPlaylistRequest")
+
+    def __init__(self):
+        super().__init__()
+        self.lastSelectedTab = -1
+        self.menu = QMenu(self)
+        self.newAction = QAction(self.tr("New playlist"), self)
+        self.closeAction = QAction(self.tr("Close tab"), self)
+        self.closeToLeft = QAction(self.tr("Close to left"), self)
+        self.closeToRight = QAction(self.tr("Close to right"), self)
+        self.renameTab = QAction(self.tr("Rename tab"), self)
+        self.menu.addActions([self.newAction, self.closeAction, self.closeToLeft, self.closeToRight, self.renameTab])
+        self.newAction.triggered.connect(self.newPlaylistHandler)
+        self.closeAction.triggered.connect(self.closeTabHandler)
+        self.closeToLeft.triggered.connect(self.closeToLeftHandler)
+        self.closeToRight.triggered.connect(self.closeToRightHandler)
+
+    def contextMenuEvent(self, ev):
+        self.renameTab.setEnabled(False)
+        self.closeAction.setEnabled(False)
+        self.closeToLeft.setEnabled(False)
+        self.closeToRight.setEnabled(False)
+        self.lastSelectedTab = tab = self.tabAt(ev.pos())
+        logging.debug("Selected Tab: %d" % tab)
+        logging.debug("Total tabs: %d" % self.count())
+        if tab >= 0:
+            self.renameTab.setEnabled(True)
+            self.closeAction.setEnabled(True)
+            if tab > 0:
+                self.closeToLeft.setEnabled(True)
+            if tab < self.count() - 1:
+                self.closeToRight.setEnabled(True)
+        self.menu.popup(ev.globalPos())
+        ev.accept()
+
+    def newPlaylistHandler(self):
+        self.newPlaylistRequest.emit()
+
+    def closeTabHandler(self):
+        if self.lastSelectedTab != -1:
+            self.tabCloseRequested.emit(self.lastSelectedTab)
+
+    def closeToLeftHandler(self):
+        if self.lastSelectedTab != -1:
+            for x in range(self.lastSelectedTab - 1, -1, -1):
+                self.tabCloseRequested.emit(x)
+
+    def closeToRightHandler(self):
+        logging.debug("closeToRightHandler %d:%d" % (self.lastSelectedTab, self.count()))
+        if self.lastSelectedTab != -1:
+            for x in range(self.count() - 1, self.lastSelectedTab, -1):
+                self.tabCloseRequested.emit(x)
 
 
 class PlaylistsContainer(TabbedContainer, Savable, Loadable):
@@ -300,11 +354,16 @@ class PlaylistsContainer(TabbedContainer, Savable, Loadable):
         """
         super().__init__()
         self.context = context
+        self.setTabBar(PlaylistTabBar())
+        self.tabBar().setExpanding(False)
+        self.setTabsClosable(True)
+        self.setMovable(True)
         self.controls = self.context.getControls()
         self.controls.needNext.connect(self.playNext)
         self.controls.needPrev.connect(self.playPrev)
         self.controls.needCurrent.connect(self.playCurrent)
         self.controls.stateChanged.connect(self.stateChanged)
+        self.tabBar().newPlaylistRequest.connect(lambda: self.createPlaylist())
 
     def load(self):
         try:

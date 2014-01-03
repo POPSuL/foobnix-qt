@@ -6,6 +6,9 @@ import os
 import sys
 from foobnix.models import Media
 
+supportedFiles = [".mp3", ".m3u", ".pls", ".wav", ".flac", ".mp4", ".aac", ".m4a", ".cue"]
+supportedFilesGlob = ["*" + k for k in supportedFiles]
+
 
 class Singleton(type):
 
@@ -19,6 +22,11 @@ class Singleton(type):
         self.instance = None
 
 
+def getFileExtension(path):
+    a, b = os.path.splitext(path)
+    return b
+
+
 def createMediasForPaths(paths):
     if not isinstance(paths, list):
         paths = [paths]
@@ -28,7 +36,10 @@ def createMediasForPaths(paths):
             for (d, dirs, files) in os.walk(path):
                 medias.append(Media(d, isMeta=True))
                 for file in sorted(files):
-                    medias.append(Media(os.path.join(d, file)))
+                    p = os.path.join(d, file)
+                    ext = getFileExtension(p)
+                    if ext in supportedFiles:
+                        medias.append(Media(p))
         elif os.path.isfile(path):
             medias.append(Media(path))
     return medias

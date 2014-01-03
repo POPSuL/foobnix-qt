@@ -6,6 +6,9 @@ from PyQt4.QtGui import *
 
 class MidButtonCloseableTabBar(QTabBar):
 
+    def __init__(self):
+        super().__init__()
+
     def mouseReleaseEvent(self, ev):
         """
         @type ev: QMouseEvent

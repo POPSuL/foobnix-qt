@@ -7,11 +7,8 @@ from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix import Savable, Loadable
 from foobnix.gui import TabbedContainer
-from foobnix.util import createMediasForPaths
+from foobnix.util import createMediasForPaths, supportedFilesGlob
 from foobnix.perspectives import BasePerspective
-
-
-supportedFiles = ["*.mp3", "*.m3u", "*.pls", "*.wav", "*.flac", "*.mp4", "*.aac", "*.m4a", "*.cue"]
 
 
 class FSTreeView(QTreeView):
@@ -62,7 +59,7 @@ class FSTabPage(QWidget):
         self.setLayout(self.layout)
 
         ## set up
-        self.treeModel.setNameFilters(supportedFiles)
+        self.treeModel.setNameFilters(supportedFilesGlob)
         self.treeModel.setNameFilterDisables(False)
         self.tree.setDragEnabled(True)
         self.tree.setAcceptDrops(False)
@@ -111,9 +108,9 @@ class FSTabbedWidget(TabbedContainer):
         self.setTabPosition(QTabWidget.West)
 
         self.menu = QMenu()
-        self.addTabAction = QAction("Add empty tab", self)
+        self.addTabAction = QAction(self.tr("Add empty tab"), self)
         self.menu.addAction(self.addTabAction)
-        self.selectOtherDirAction = QAction("Select another dir", self)
+        self.selectOtherDirAction = QAction(self.tr("Select another dir"), self)
         self.menu.addAction(self.selectOtherDirAction)
         self.addTabAction.triggered.connect(lambda *a: self.addTab())
         self.selectOtherDirAction.triggered.connect(lambda *a: self.currentWidget().selectPath())
