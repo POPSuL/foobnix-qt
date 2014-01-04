@@ -146,7 +146,7 @@ class RadioPerspective(BasePerspective, Loadable, Savable):
         basename = os.path.basename(path)[:-4]
         top = RadioItem(basename, isMeta=True)
         target.appendRow(top)
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             for line in f.readlines():
                 chunks = [k.strip() for k in line.split("=", 1)]
                 if len(chunks) == 2:
