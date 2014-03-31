@@ -67,6 +67,6 @@ def lookupResource(name):
     for path in paths:
         full_path = os.path.join(path, name)
         if os.path.exists(full_path):
-            return full_path
+            return os.path.abspath(full_path)
 
     raise FileNotFoundError("File %s doesn't exists" % name)

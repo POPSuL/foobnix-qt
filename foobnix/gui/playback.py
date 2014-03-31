@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import logging
+import platform
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix.gui import Separator
@@ -27,10 +29,20 @@ class VolumeController(QSlider):
         if ev.button() == QtCore.Qt.LeftButton:
             self.setValue(self.minimum() + ((self.maximum() - self.minimum()) * ev.x()) / (self.width() - 8))
             ev.accept()
-        super(QSlider, self).mousePressEvent(ev)
+        super().mousePressEvent(ev)
 
 
 class SeekableProgressbar(QProgressBar):
+
+    style = """QProgressBar::chunk {
+     background-color: #3add36;
+     width: 1px;
+    }
+     QProgressBar {
+         border: 2px solid grey;
+         border-radius: 0px;
+         text-align: center;
+    }"""
 
     def __init__(self, context):
         """
@@ -44,6 +56,8 @@ class SeekableProgressbar(QProgressBar):
         self.setTextVisible(True)
         self.valueChanged.connect(self._valueChanged)
         self.controls.seekableChanged.connect(self.seekableChanged)
+        if platform.system() == "Windows":
+            self.setStyleSheet(self.style)
 
         self.isSeekable = True
 
@@ -52,7 +66,7 @@ class SeekableProgressbar(QProgressBar):
             self.setValue(self.minimum() + ((self.maximum() - self.minimum()) * ev.x()) / (self.width() - 8))
             self.controls.seek(self.value())
             ev.accept()
-        super(QProgressBar, self).mousePressEvent(ev)
+        super().mousePressEvent(ev)
 
     def onPositionChanged(self, current, total, force=False):
         if self.isSeekable or force:
@@ -68,6 +82,7 @@ class SeekableProgressbar(QProgressBar):
         self.setFormat("%02d:%02d" % (minutes or 0, seconds or 0))
 
     def seekableChanged(self, seekable):
+        logging.debug("Seekable changed. seekable?: %s" % str(seekable))
         self.isSeekable = seekable
         self.onPositionChanged(1, 1, True)
 

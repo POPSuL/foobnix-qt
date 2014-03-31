@@ -6,17 +6,18 @@ from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix.search import AbstractSearchSource
 
+
 class SearchBar(QHBoxLayout):
 
-    def __init__(self):
-        super(SearchBar, self).__init__()
+    def __init__(self, parent=None):
+        super(SearchBar, self).__init__(parent)
 
         ## base
         self.searchSources = []
         self.searchSourceSelector = QComboBox()
         self.searchTextBar = QLineEdit("")
-        self.searchTextBar.setPlaceholderText("Enter your search query")
-        self.searchButton = QPushButton("Search")
+        self.searchTextBar.setPlaceholderText(self.tr("Enter your search query"))
+        self.searchButton = QPushButton(self.tr("Search"))
 
         ## build gui
         self.setSpacing(0)

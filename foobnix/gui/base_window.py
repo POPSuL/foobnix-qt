@@ -2,6 +2,7 @@
 
 __author__ = 'popsul'
 
+import logging
 from PyQt4 import QtCore
 from PyQt4.QtGui import *
 from foobnix import Loadable, Savable
@@ -46,6 +47,12 @@ class BaseWindow(QMainWindow, Loadable, Savable):
 
         self.setWindowTitle("Foobnix")
 
+        ## set up icons
+        paths = QIcon.themeSearchPaths()
+        logging.debug("Icon theme path is %s" % lookupResource("icons"))
+        QIcon.setThemeSearchPaths([lookupResource("icons")] + paths)
+        QIcon.setThemeName("Humanity")
+
         ## menus
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"))
         self.viewMenu = self.menuBar().addMenu(self.tr("&View"))
@@ -53,7 +60,7 @@ class BaseWindow(QMainWindow, Loadable, Savable):
         self.helpMenu = self.menuBar().addMenu(self.tr("&Help"))
 
         ## perspectives
-        self.leftHBoxWrapper = QWidget()
+        self.leftHBoxWrapper = QWidget(self)
 
         ## searchbar + playlist contaner
         self.searchBar = SearchBar()
@@ -62,11 +69,11 @@ class BaseWindow(QMainWindow, Loadable, Savable):
         rightHBox.addLayout(self.searchBar)
         rightHBox.addWidget(self.playlistsContainer, 1)
         rightHBox.setContentsMargins(0, 0, 0, 0)
-        rightHBoxWrapper = QWidget()
+        rightHBoxWrapper = QWidget(self)
         rightHBoxWrapper.setLayout(rightHBox)
 
         ## splitter for left-right sides
-        self.splitter = QSplitter()
+        self.splitter = QSplitter(self)
         self.splitterHandler = QSplitterHandle(QtCore.Qt.Horizontal, None)
         self.splitter.setOrientation(QtCore.Qt.Horizontal)
         self.splitter.addWidget(self.leftHBoxWrapper)
@@ -90,7 +97,7 @@ class BaseWindow(QMainWindow, Loadable, Savable):
         self.vbox.addWidget(self.splitter, 1)
 
         #self.setLayout(self.vbox)
-        wrapper = QWidget()
+        wrapper = QWidget(self)
         wrapper.setLayout(self.vbox)
         self.setCentralWidget(wrapper)
         self.statusBar().addWidget(self.titleLabel, 2)

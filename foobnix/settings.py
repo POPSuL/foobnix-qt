@@ -18,7 +18,7 @@ class Settings(QtCore.QSettings, Savable, Loadable):
     valueChanged = QtCore.pyqtSignal(str, object, object, name="valueChanged")
 
     def __init__(self, name, *__args):
-        super().__init__(os.path.join(CONFIG_DIR, name), self.NativeFormat)
+        super().__init__(os.path.join(CONFIG_DIR, name), self.IniFormat)
         self.sync()
 
     def setValue(self, p_str, p_object):

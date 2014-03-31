@@ -20,8 +20,8 @@ class MidButtonCloseableTabBar(QTabBar):
 
 class TabbedContainer(QTabWidget):
 
-    def __init__(self):
-        super(TabbedContainer, self).__init__()
+    def __init__(self, parent=None):
+        super(TabbedContainer, self).__init__(parent)
         self.setTabBar(MidButtonCloseableTabBar())
         self.tabBar().setExpanding(False)
         self.setTabsClosable(True)

@@ -378,8 +378,12 @@ class PlaylistsContainer(TabbedContainer, Savable, Loadable):
                 playlists.reverse()
                 for p in playlists:
                     logging.debug("restoring %s with %d medias" % (p["title"], len(p["medias"])))
-                    self.createPlaylist(p["title"], p["medias"])
-        except:
+                    logging.debug(p["sizes"])
+                    playlist = self.createPlaylist(p["title"], p["medias"])
+                    for idx, size in enumerate(p["sizes"]):
+                        playlist.header().resizeSection(idx, size)
+        except Exception as e:
+            logging.error(str(e))
             self.createPlaylist()
 
     def save(self):
@@ -387,12 +391,18 @@ class PlaylistsContainer(TabbedContainer, Savable, Loadable):
         for i in range(0, self.count()):
             title = self.tabText(i)
             widget = self.widget(i)
+            sizes = []
+            for j in range(0, widget.header().count()):
+                sizes.append(widget.header().sectionSize(j))
+
             p = {
                 "title": title,
-                "medias": widget.getAllMedias()
+                "medias": widget.getAllMedias(),
+                "sizes": sizes
             }
             playlists.append(p)
             logging.debug("storing %s with %d medias" % (p["title"], len(p["medias"])))
+            logging.debug(sizes)
         with open(os.path.join(CACHE_DIR, "playlists"), "wb") as f:
             pickle.dump(playlists, f, 3)
 
@@ -411,9 +421,15 @@ class PlaylistsContainer(TabbedContainer, Savable, Loadable):
             media = []
 
         playlist = self.__createPlaylist(media)
+        playlist.header().sectionResized.connect(self.headerResized)
         index = self.insertTab(0, playlist, title)
         self.setCurrentIndex(index)
         return playlist
+
+    def headerResized(self, idx, oldSize, newSize):
+         for i in range(0, self.count()):
+            widget = self.widget(i)
+            widget.header().resizeSection(idx, newSize)
 
     def playNext(self, shuffle, repeatAll):
         current = self.getCurrent()

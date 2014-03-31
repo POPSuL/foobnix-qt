@@ -160,6 +160,5 @@ class RadioPerspective(BasePerspective, Loadable, Savable):
                 for f in files:
                     self._addFpl(os.path.join(d, f))
 
-
     def save(self):
         self.settings.setValue("perspective/tab", self.widget.currentIndex())

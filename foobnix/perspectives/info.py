@@ -48,7 +48,7 @@ class SimilarArtistsSection(TabulatedInfoSection):
         super(SimilarArtistsSection, self).__init__()
 
     def getName(self):
-        return "Similar artists"
+        return self.tr("Similar artists")
 
 
 class SimilarTracksSection(TabulatedInfoSection):
@@ -57,7 +57,7 @@ class SimilarTracksSection(TabulatedInfoSection):
         super(SimilarTracksSection, self).__init__()
 
     def getName(self):
-        return "Similar tracks"
+        return self.tr("Similar tracks")
 
 
 class SimilarLabelsSection(TabulatedInfoSection):
@@ -66,7 +66,7 @@ class SimilarLabelsSection(TabulatedInfoSection):
         super(SimilarLabelsSection, self).__init__()
 
     def getName(self):
-        return "Similar labels"
+        return self.tr("Similar labels")
 
 
 class BestTracksSection(TabulatedInfoSection):
@@ -77,7 +77,7 @@ class BestTracksSection(TabulatedInfoSection):
         self.deactivated.connect(self._deactivated)
 
     def getName(self):
-        return "Best tracks"
+        return self.tr("Best tracks")
 
     def _activated(self):
         print("Best tracks section has been activated")
@@ -89,18 +89,19 @@ class BestTracksSection(TabulatedInfoSection):
 class LyricsSection(BaseInfoSection):
 
     def __init__(self):
-        super(LyricsSection, self).__init__()
+        super().__init__()
 
         self.activated.connect(self._activated)
         self.deactivated.connect(self._deactivated)
 
-        self.widget = QTextEdit()
-        self.widget.setText("Some lyrics")
+        self.widget = None
 
     def getName(self):
-        return "Lyrics"
+        return self.tr("Lyrics")
 
     def getWidget(self):
+        if not self.widget:
+            self.widget = QTextEdit()
         return self.widget
 
     def _activated(self):
@@ -137,24 +138,23 @@ class InfoPerspective(BasePerspective):
         self.labels = []
 
         ## build gui
+        self.widget = QWidget()
         mainVbox = QVBoxLayout()
+        self.widget.setLayout(mainVbox)
         headHbox = QHBoxLayout()
+        mainVbox.addLayout(headHbox)
         self.sectionLabels = QVBoxLayout()
         self.sectionsContainer = QStackedLayout()
+        mainVbox.addLayout(self.sectionsContainer, 1)
         self.sectionsContainer.addWidget(QLabel())  # dummy
         self.cover = QPixmap(lookupResource("images/cover.jpg"))
         self.coverWrapper = QLabel()
         self.coverWrapper.setFixedSize(128, 128)
         self.coverWrapper.setPixmap(self.cover.scaled(128, 128, QtCore.Qt.KeepAspectRatio))
-
         headHbox.addWidget(self.coverWrapper)
         headHbox.addLayout(self.sectionLabels, 1)
-        mainVbox.addLayout(headHbox)
-        mainVbox.addLayout(self.sectionsContainer, 1)
-        mainVbox.setContentsMargins(0, 0, 0, 0)
 
-        self.widget = QWidget()
-        self.widget.setLayout(mainVbox)
+        mainVbox.setContentsMargins(0, 0, 0, 0)
 
         self.activated.connect(self._activated)
         self.deactivated.connect(self._deactivated)
@@ -169,13 +169,13 @@ class InfoPerspective(BasePerspective):
 
         self.attachedSections.append(section)
         name, widget = section.getName(), section.getWidget()
+        self.sectionsContainer.addWidget(widget)
         label = InteractiveLabel(name)
         label.setStyleSheet(additionalStyleSheet)
         label.setProperty("sectionId", len(self.attachedSections))
         label.setProperty("active", "false")
         self.labels.append(label)
         self.sectionLabels.addWidget(label)
-        self.sectionsContainer.addWidget(widget)
 
         def activated():
             self.activateSection(label)
@@ -204,7 +204,7 @@ class InfoPerspective(BasePerspective):
         label.style().polish(label)
 
     def getName(self):
-        return "Info"
+        return self.tr("Info")
 
     def getWidget(self):
         return self.widget

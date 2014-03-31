@@ -96,6 +96,7 @@ class LastFMPerspective(BasePerspective, Loadable, Savable):
 
         self.layoutWrapper = QWidget()
         self.widget = QStackedLayout()
+        self.layoutWrapper.setLayout(self.widget)
         self.loadingWidget = self._createLoadingWidget()
         self.errorWidget = self._createErrorWidget()
         self.baseWidget = self._createBaseWidget()
@@ -103,7 +104,6 @@ class LastFMPerspective(BasePerspective, Loadable, Savable):
         self.widget.addWidget(self.errorWidget)
         self.widget.addWidget(self.baseWidget)
         self.widget.setCurrentIndex(0)
-        self.layoutWrapper.setLayout(self.widget)
 
         self.service.activationFailed.connect(self._activationFailed)
         self.service.activated.connect(self._serviceActivated)

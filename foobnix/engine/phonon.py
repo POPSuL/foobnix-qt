@@ -24,6 +24,7 @@ class PhononEngine(MediaEngine):
         self.mediaObject.currentSourceChanged.connect(self._currentSourceChanged)
         self.mediaObject.aboutToFinish.connect(self._aboutToFinish)
         self.mediaObject.finished.connect(self.finished.emit)
+        self.mediaObject.seekableChanged.connect(self.seekableChanged.emit)
         Phonon.createPath(self.mediaObject, self.audioOutput)
 
         self.prevMedia = None
@@ -45,8 +46,8 @@ class PhononEngine(MediaEngine):
             self.stateChanged.emit(self.ErrorState)
 
     def _metadataChanged(self):
-        logging.debug("_metadataChanged()")
-        logging.debug(self.mediaObject.metaData())
+        #logging.debug("_metadataChanged()")
+        #logging.debug(self.mediaObject.metaData())
         self.metaChanged.emit(self.mediaObject.metaData())
 
     def _currentSourceChanged(self, source):
