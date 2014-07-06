@@ -11,13 +11,22 @@ from foobnix.util import createMediasForPaths, supportedFilesGlob
 from foobnix.perspectives import BasePerspective
 
 
+class FileSystemModel(QFileSystemModel):
+
+    def __init__(self):
+        super().__init__()
+
+    def refresh(self):
+        self.setRootPath(self.rootPath())
+
+
 class FSTreeView(QTreeView):
 
     itemDoubleClicked = QtCore.pyqtSignal(str, name="itemDoubleClicked")
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.treeModel = QFileSystemModel()
+        self.treeModel = FileSystemModel()
         self.setModel(self.treeModel)
 
     def mouseDoubleClickEvent(self, ev):
@@ -97,6 +106,9 @@ class FSTabPage(QWidget):
     def rootPath(self):
         return self.rootPath
 
+    def refresh(self):
+        self.treeModel.refresh()
+
 
 class FSTabbedWidget(TabbedContainer):
     def __init__(self, context):
@@ -112,8 +124,11 @@ class FSTabbedWidget(TabbedContainer):
         self.menu.addAction(self.addTabAction)
         self.selectOtherDirAction = QAction(self.tr("Select another dir"), self)
         self.menu.addAction(self.selectOtherDirAction)
+        self.refreshAction = QAction(self.tr("Refresh"), self)
+        self.menu.addAction(self.refreshAction)
         self.addTabAction.triggered.connect(lambda *a: self.addTab())
         self.selectOtherDirAction.triggered.connect(lambda *a: self.currentWidget().selectPath())
+        self.refreshAction.triggered.connect(lambda *a: self.currentWidget().refresh())
 
     def addTab(self, label="Empty", path=None):
         page = FSTabPage(self.context, path)
